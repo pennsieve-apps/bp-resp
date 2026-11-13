@@ -1,0 +1,960 @@
+cff-version: 1.2.0
+message: If you use this app, please cite it and the works it builds on, listed under references.
+type: software
+title: bp-resp
+abstract: Beat-to-beat arterial blood pressure (systolic, diastolic, beat-mean and pulse pressure, with pulse
+  onsets found by the slope sum function of Zong et al. 2003), breathing (breath onsets, rate, amplitude,
+  inspiration and expiration times with NeuroKit2), spontaneous baroreflex sensitivity by the sequence
+  method (Bertinieri, Parati et al.) and the spectral alpha index and transfer-function gain (as compared
+  in EuroBaVar), and respiratory sinus arrhythmia (peak-to-trough and Porges-Bohrer, NeuroKit2), for
+  physiological recordings of humans and animals (species presets for human, pig, dog, rabbit, rat and
+  mouse). Reads NWB files as written by physio-import, optionally stimulation epochs from stim-events and
+  R-peaks from ecg-hrv; writes beat, breath and baroreflex tables and a regularly sampled series.csv for
+  dose-response analysis. Uncalibrated pressure is used for timing only; recordings without pressure or
+  respiration are reported as skipped. One step of the Heart Rate Variability and Baroreflex and the
+  Cardiovascular Response to Nerve Stimulation workflows. Research outputs.
+authors:
+- name: Pennsieve (University of Pennsylvania)
+contact:
+- given-names: Joost
+  family-names: Wagenaar
+  orcid: https://orcid.org/0009-0004-5925-5451
+  affiliation: University of Pennsylvania
+repository-code: https://github.com/pennsieve-apps/bp-resp
+license: Apache-2.0
+keywords:
+- physiology
+- autonomic
+- cardiovascular
+- blood-pressure
+- baroreflex
+- respiration
+- heart-rate-variability
+- neuromodulation
+- nwb
+references:
+- type: article
+  title: 'NeuroKit2: A Python toolbox for neurophysiological signal processing'
+  authors:
+  - family-names: 'Makowski'
+    given-names: 'Dominique'
+  - family-names: 'Pham'
+    given-names: 'Tam'
+  - family-names: 'Lau'
+    given-names: 'Zen J.'
+  - family-names: 'Brammer'
+    given-names: 'Jan C.'
+  - family-names: 'Lespinasse'
+    given-names: 'François'
+  - family-names: 'Pham'
+    given-names: 'Hung'
+  - family-names: 'Schölzel'
+    given-names: 'Christopher'
+  - family-names: 'Chen'
+    given-names: 'S. H. Annabel'
+  year: 2021
+  journal: 'Behavior Research Methods'
+  volume: '53'
+  issue: '4'
+  start: '1689'
+  end: '1696'
+  doi: 10.3758/s13428-020-01516-y
+  identifiers:
+  - type: other
+    value: '33528817'
+    description: PMID
+- type: article
+  title: 'An open-source algorithm to detect onset of arterial blood pressure pulses'
+  authors:
+  - family-names: 'Zong'
+    given-names: 'W.'
+  - family-names: 'Heldt'
+    given-names: 'T.'
+  - family-names: 'Moody'
+    given-names: 'G.B.'
+  - family-names: 'Mark'
+    given-names: 'R.G.'
+  year: 2003
+  journal: 'Computers in Cardiology, 2003'
+  volume: '30'
+  start: '259'
+  end: '262'
+  doi: 10.1109/CIC.2003.1291140
+- type: article
+  title: 'Evaluation of the baroreceptor-heart rate reflex by 24-hour intra-arterial blood pressure monitoring in humans.'
+  authors:
+  - family-names: 'Parati'
+    given-names: 'G'
+  - family-names: 'Di Rienzo'
+    given-names: 'M'
+  - family-names: 'Bertinieri'
+    given-names: 'G'
+  - family-names: 'Pomidossi'
+    given-names: 'G'
+  - family-names: 'Casadei'
+    given-names: 'R'
+  - family-names: 'Groppelli'
+    given-names: 'A'
+  - family-names: 'Pedotti'
+    given-names: 'A'
+  - family-names: 'Zanchetti'
+    given-names: 'A'
+  - family-names: 'Mancia'
+    given-names: 'G'
+  year: 1988
+  journal: 'Hypertension'
+  volume: '12'
+  issue: '2'
+  start: '214'
+  end: '222'
+  doi: 10.1161/01.HYP.12.2.214
+  identifiers:
+  - type: other
+    value: '3410530'
+    description: PMID
+- type: article
+  title: 'Evaluation of baroreceptor reflex by blood pressure monitoring in unanesthetized cats'
+  authors:
+  - family-names: 'Bertinieri'
+    given-names: 'G.'
+  - family-names: 'Di Rienzo'
+    given-names: 'M.'
+  - family-names: 'Cavallazzi'
+    given-names: 'A.'
+  - family-names: 'Ferrari'
+    given-names: 'A. U.'
+  - family-names: 'Pedotti'
+    given-names: 'A.'
+  - family-names: 'Mancia'
+    given-names: 'G.'
+  year: 1988
+  journal: 'American Journal of Physiology-Heart and Circulatory Physiology'
+  volume: '254'
+  issue: '2'
+  start: 'H377'
+  end: 'H383'
+  doi: 10.1152/ajpheart.1988.254.2.H377
+  identifiers:
+  - type: other
+    value: '3344828'
+    description: PMID
+- type: article
+  title: 'Comparison of various techniques used to estimate spontaneous baroreflex sensitivity (the EuroBaVar study)'
+  authors:
+  - family-names: 'Laude'
+    given-names: 'Dominique'
+  - family-names: 'Elghozi'
+    given-names: 'Jean-Luc'
+  - family-names: 'Girard'
+    given-names: 'Arlette'
+  - family-names: 'Bellard'
+    given-names: 'Elisabeth'
+  - family-names: 'Bouhaddi'
+    given-names: 'Malika'
+  - family-names: 'Castiglioni'
+    given-names: 'Paolo'
+  - family-names: 'Cerutti'
+    given-names: 'Catherine'
+  - family-names: 'Cividjian'
+    given-names: 'Andrei'
+  - family-names: 'Di Rienzo'
+    given-names: 'Marco'
+  - family-names: 'Fortrat'
+    given-names: 'Jacques-Olivier'
+  - family-names: 'Janssen'
+    given-names: 'Ben'
+  - family-names: 'Karemaker'
+    given-names: 'John M.'
+  - family-names: 'Lefthériotis'
+    given-names: 'Georges'
+  - family-names: 'Parati'
+    given-names: 'Gianfranco'
+  - family-names: 'Persson'
+    given-names: 'Pontus B.'
+  - family-names: 'Porta'
+    given-names: 'Alberto'
+  - family-names: 'Quintin'
+    given-names: 'Luc'
+  - family-names: 'Regnard'
+    given-names: 'Jacques'
+  - family-names: 'Rüdiger'
+    given-names: 'Heinz'
+  - family-names: 'Stauss'
+    given-names: 'Harald M.'
+  year: 2004
+  journal: 'American Journal of Physiology-Regulatory, Integrative and Comparative Physiology'
+  volume: '286'
+  issue: '1'
+  start: 'R226'
+  end: 'R231'
+  doi: 10.1152/ajpregu.00709.2002
+  identifiers:
+  - type: other
+    value: '14500269'
+    description: PMID
+- type: article
+  title: 'On the accuracy of sequence methods for baroreflex sensitivity estimation'
+  authors:
+  - family-names: 'Bagnall-Hare'
+    given-names: 'Hasana'
+  - family-names: 'McLoone'
+    given-names: 'Violeta I.'
+  - family-names: 'Ringwood'
+    given-names: 'John V.'
+  year: 2024
+  journal: 'Physical and Engineering Sciences in Medicine'
+  volume: '47'
+  issue: '2'
+  start: '503'
+  end: '516'
+  doi: 10.1007/s13246-023-01380-y
+  identifiers:
+  - type: other
+    value: '38564152'
+    description: PMID
+- type: article
+  title: 'Tuning of the sequence technique'
+  authors:
+  - family-names: 'Laude'
+    given-names: 'D.'
+  - family-names: 'Baudrie'
+    given-names: 'V.'
+  - family-names: 'Elghozi'
+    given-names: 'J.-L.'
+  year: 2009
+  journal: 'IEEE Engineering in Medicine and Biology Magazine'
+  volume: '28'
+  issue: '6'
+  start: '30'
+  end: '34'
+  doi: 10.1109/MEMB.2009.934630
+  identifiers:
+  - type: other
+    value: '19914885'
+    description: PMID
+- type: article
+  title: 'Effects of chronic secondhand smoke exposure on cardiovascular regulation and the role of soluble epoxide hydrolase in mice'
+  authors:
+  - family-names: 'Pan'
+    given-names: 'Shiyue'
+  - family-names: 'Karey'
+    given-names: 'Emma'
+  - family-names: 'Nieves-Cintron'
+    given-names: 'Madeline'
+  - family-names: 'Chen'
+    given-names: 'Yi-Je'
+  - family-names: 'Hwang'
+    given-names: 'Sung Hee'
+  - family-names: 'Hammock'
+    given-names: 'Bruce D.'
+  - family-names: 'Pinkerton'
+    given-names: 'Kent E.'
+  - family-names: 'Chen'
+    given-names: 'Chao-Yin'
+  year: 2023
+  journal: 'Frontiers in Physiology'
+  volume: '14'
+  start: '1185744'
+  doi: 10.3389/fphys.2023.1185744
+  identifiers:
+  - type: other
+    value: '37362438'
+    description: PMID
+- type: article
+  title: 'Constant light disrupts biological rhythms and worsens sleep quality but does not elevate blood pressure in female rats'
+  authors:
+  - family-names: 'Molcan'
+    given-names: 'Lubos'
+  - family-names: 'Mauer Sutovska'
+    given-names: 'Hana'
+  - family-names: 'Zeman'
+    given-names: 'Michal'
+  year: 2026
+  journal: 'Hypertension Research'
+  volume: '49'
+  issue: '4'
+  start: '1349'
+  end: '1360'
+  doi: 10.1038/s41440-026-02579-8
+  identifiers:
+  - type: other
+    value: '41714710'
+    description: PMID
+- type: article
+  title: 'Optimized breath detection algorithm in electrical impedance tomography'
+  authors:
+  - family-names: 'Khodadad'
+    given-names: 'D'
+  - family-names: 'Nordebo'
+    given-names: 'S'
+  - family-names: 'Müller'
+    given-names: 'B'
+  - family-names: 'Waldmann'
+    given-names: 'A'
+  - family-names: 'Yerworth'
+    given-names: 'R'
+  - family-names: 'Becher'
+    given-names: 'T'
+  - family-names: 'Frerichs'
+    given-names: 'I'
+  - family-names: 'Sophocleous'
+    given-names: 'L'
+  - family-names: 'van Kaam'
+    given-names: 'A'
+  - family-names: 'Miedema'
+    given-names: 'M'
+  - family-names: 'Seifnaraghi'
+    given-names: 'N'
+  - family-names: 'Bayford'
+    given-names: 'R'
+  year: 2018
+  journal: 'Physiological Measurement'
+  volume: '39'
+  issue: '9'
+  start: '094001'
+  doi: 10.1088/1361-6579/aad7e6
+  identifiers:
+  - type: other
+    value: '30074906'
+    description: PMID
+- type: article
+  title: 'Statistical strategies to quantify respiratory sinus arrhythmia: Are commonly used metrics equivalent?'
+  authors:
+  - family-names: 'Lewis'
+    given-names: 'Gregory F.'
+  - family-names: 'Furman'
+    given-names: 'Senta A.'
+  - family-names: 'McCool'
+    given-names: 'Martha F.'
+  - family-names: 'Porges'
+    given-names: 'Stephen W.'
+  year: 2012
+  journal: 'Biological Psychology'
+  volume: '89'
+  issue: '2'
+  start: '349'
+  end: '364'
+  doi: 10.1016/j.biopsycho.2011.11.009
+  identifiers:
+  - type: other
+    value: '22138367'
+    description: PMID
+- type: article
+  title: 'Toward understanding respiratory sinus arrhythmia: Relations to cardiac vagal tone, evolution and biobehavioral functions'
+  authors:
+  - family-names: 'Grossman'
+    given-names: 'Paul'
+  - family-names: 'Taylor'
+    given-names: 'Edwin W.'
+  year: 2007
+  journal: 'Biological Psychology'
+  volume: '74'
+  issue: '2'
+  start: '263'
+  end: '285'
+  doi: 10.1016/j.biopsycho.2005.11.014
+  identifiers:
+  - type: other
+    value: '17081672'
+    description: PMID
+- type: article
+  title: 'Determinants of Spontaneous Baroreflex Sensitivity in a Healthy Working Population'
+  authors:
+  - family-names: 'Kardos'
+    given-names: 'Attila'
+  - family-names: 'Watterich'
+    given-names: 'Gusztáv'
+  - family-names: 'de Menezes'
+    given-names: 'Renee'
+  - family-names: 'Csanády'
+    given-names: 'Miklós'
+  - family-names: 'Casadei'
+    given-names: 'Barbara'
+  - family-names: 'Rudas'
+    given-names: 'László'
+  year: 2001
+  journal: 'Hypertension'
+  volume: '37'
+  issue: '3'
+  start: '911'
+  end: '916'
+  doi: 10.1161/01.HYP.37.3.911
+  identifiers:
+  - type: other
+    value: '11244017'
+    description: PMID
+- type: article
+  title: 'PhysioZoo: A Novel Open Access Platform for Heart Rate Variability Analysis of Mammalian Electrocardiographic Data'
+  authors:
+  - family-names: 'Behar'
+    given-names: 'Joachim A.'
+  - family-names: 'Rosenberg'
+    given-names: 'Aviv A.'
+  - family-names: 'Weiser-Bitoun'
+    given-names: 'Ido'
+  - family-names: 'Shemla'
+    given-names: 'Ori'
+  - family-names: 'Alexandrovich'
+    given-names: 'Alexandra'
+  - family-names: 'Konyukhov'
+    given-names: 'Eugene'
+  - family-names: 'Yaniv'
+    given-names: 'Yael'
+  year: 2018
+  journal: 'Frontiers in Physiology'
+  volume: '9'
+  start: '1390'
+  doi: 10.3389/fphys.2018.01390
+  identifiers:
+  - type: other
+    value: '30337883'
+    description: PMID
+- type: article
+  title: 'Heart Rate Variability'
+  authors:
+  - name: Task Force of the European Society of Cardiology and the North American Society of Pacing and Electrophysiology
+  year: 1996
+  journal: 'Circulation'
+  volume: '93'
+  issue: '5'
+  start: '1043'
+  end: '1065'
+  doi: 10.1161/01.CIR.93.5.1043
+- type: article
+  title: 'Heart rate variability in mice: a theoretical and practical guide'
+  authors:
+  - family-names: 'Thireau'
+    given-names: 'J.'
+  - family-names: 'Zhang'
+    given-names: 'B. L.'
+  - family-names: 'Poisson'
+    given-names: 'D.'
+  - family-names: 'Babuty'
+    given-names: 'D.'
+  year: 2007
+  journal: 'Experimental Physiology'
+  volume: '93'
+  issue: '1'
+  start: '83'
+  end: '94'
+  doi: 10.1113/expphysiol.2007.040733
+  identifiers:
+  - type: other
+    value: '17911354'
+    description: PMID
+- type: article
+  title: 'Sex differences in heart rate and heart rate variability in rats: Implications for translational research'
+  authors:
+  - family-names: 'Carnevali'
+    given-names: 'Luca'
+  - family-names: 'Barbetti'
+    given-names: 'Margherita'
+  - family-names: 'Statello'
+    given-names: 'Rosario'
+  - family-names: 'Williams'
+    given-names: 'DeWayne P.'
+  - family-names: 'Thayer'
+    given-names: 'Julian F.'
+  - family-names: 'Sgoifo'
+    given-names: 'Andrea'
+  year: 2023
+  journal: 'Frontiers in Physiology'
+  volume: '14'
+  start: '1170320'
+  doi: 10.3389/fphys.2023.1170320
+  identifiers:
+  - type: other
+    value: '37035663'
+    description: PMID
+- type: article
+  title: 'Identification of low and high frequency ranges for heart rate variability and blood pressure variability analyses using pharmacological autonomic blockade with atropine and propranolol in swine'
+  authors:
+  - family-names: 'Poletto'
+    given-names: 'Rosangela'
+  - family-names: 'Janczak'
+    given-names: 'Andrew M.'
+  - family-names: 'Marchant-Forde'
+    given-names: 'Ruth M.'
+  - family-names: 'Marchant'
+    given-names: 'Jeremy N.'
+  - family-names: 'Matthews'
+    given-names: 'Donald L.'
+  - family-names: 'Dowell'
+    given-names: 'Carol A.'
+  - family-names: 'Hogan'
+    given-names: 'Daniel F.'
+  - family-names: 'Freeman'
+    given-names: 'Lynetta J.'
+  - family-names: 'Lay'
+    given-names: 'Donald C.'
+  year: 2011
+  journal: 'Physiology & Behavior'
+  volume: '103'
+  issue: '2'
+  start: '188'
+  end: '196'
+  doi: 10.1016/j.physbeh.2011.01.019
+  identifiers:
+  - type: other
+    value: '21281655'
+    description: PMID
+- type: article
+  title: 'Heart Rate Variability Analysis in an Experimental Model of Hemorrhagic Shock and Resuscitation in Pigs'
+  authors:
+  - family-names: 'Salomão'
+    given-names: 'Edgard'
+  - family-names: 'Otsuki'
+    given-names: 'Denise Aya'
+  - family-names: 'Correa'
+    given-names: 'Andre Luis'
+  - family-names: 'Fantoni'
+    given-names: 'Denise Tabacchi'
+  - family-names: 'dos Santos'
+    given-names: 'Fernando'
+  - family-names: 'Irigoyen'
+    given-names: 'Maria Claudia'
+  - family-names: 'Auler'
+    given-names: 'Jose Otavio Costa'
+  year: 2015
+  journal: 'PLOS ONE'
+  volume: '10'
+  issue: '8'
+  start: 'e0134387'
+  doi: 10.1371/journal.pone.0134387
+  identifiers:
+  - type: other
+    value: '26247476'
+    description: PMID
+- type: article
+  title: 'The Neurodata Without Borders ecosystem for neurophysiological data science'
+  authors:
+  - family-names: 'Rübel'
+    given-names: 'Oliver'
+  - family-names: 'Tritt'
+    given-names: 'Andrew'
+  - family-names: 'Ly'
+    given-names: 'Ryan'
+  - family-names: 'Dichter'
+    given-names: 'Benjamin K'
+  - family-names: 'Ghosh'
+    given-names: 'Satrajit'
+  - family-names: 'Niu'
+    given-names: 'Lawrence'
+  - family-names: 'Baker'
+    given-names: 'Pamela'
+  - family-names: 'Soltesz'
+    given-names: 'Ivan'
+  - family-names: 'Ng'
+    given-names: 'Lydia'
+  - family-names: 'Svoboda'
+    given-names: 'Karel'
+  - family-names: 'Frank'
+    given-names: 'Loren'
+  - family-names: 'Bouchard'
+    given-names: 'Kristofer E'
+  year: 2022
+  journal: 'eLife'
+  volume: '11'
+  start: 'e78362'
+  doi: 10.7554/eLife.78362
+  identifiers:
+  - type: other
+    value: '36193886'
+    description: PMID
+- type: article
+  title: 'SciPy 1.0: fundamental algorithms for scientific computing in Python'
+  authors:
+  - family-names: 'Virtanen'
+    given-names: 'Pauli'
+  - family-names: 'Gommers'
+    given-names: 'Ralf'
+  - family-names: 'Oliphant'
+    given-names: 'Travis E.'
+  - family-names: 'Haberland'
+    given-names: 'Matt'
+  - family-names: 'Reddy'
+    given-names: 'Tyler'
+  - family-names: 'Cournapeau'
+    given-names: 'David'
+  - family-names: 'Burovski'
+    given-names: 'Evgeni'
+  - family-names: 'Peterson'
+    given-names: 'Pearu'
+  - family-names: 'Weckesser'
+    given-names: 'Warren'
+  - family-names: 'Bright'
+    given-names: 'Jonathan'
+  - family-names: 'van der Walt'
+    given-names: 'Stéfan J.'
+  - family-names: 'Brett'
+    given-names: 'Matthew'
+  - family-names: 'Wilson'
+    given-names: 'Joshua'
+  - family-names: 'Millman'
+    given-names: 'K. Jarrod'
+  - family-names: 'Mayorov'
+    given-names: 'Nikolay'
+  - family-names: 'Nelson'
+    given-names: 'Andrew R. J.'
+  - family-names: 'Jones'
+    given-names: 'Eric'
+  - family-names: 'Kern'
+    given-names: 'Robert'
+  - family-names: 'Larson'
+    given-names: 'Eric'
+  - family-names: 'Carey'
+    given-names: 'C J'
+  - family-names: 'Polat'
+    given-names: 'İlhan'
+  - family-names: 'Feng'
+    given-names: 'Yu'
+  - family-names: 'Moore'
+    given-names: 'Eric W.'
+  - family-names: 'VanderPlas'
+    given-names: 'Jake'
+  - family-names: 'Laxalde'
+    given-names: 'Denis'
+  - family-names: 'Perktold'
+    given-names: 'Josef'
+  - family-names: 'Cimrman'
+    given-names: 'Robert'
+  - family-names: 'Henriksen'
+    given-names: 'Ian'
+  - family-names: 'Quintero'
+    given-names: 'E. A.'
+  - family-names: 'Harris'
+    given-names: 'Charles R.'
+  - family-names: 'Archibald'
+    given-names: 'Anne M.'
+  - family-names: 'Ribeiro'
+    given-names: 'Antônio H.'
+  - family-names: 'Pedregosa'
+    given-names: 'Fabian'
+  - family-names: 'van Mulbregt'
+    given-names: 'Paul'
+  - name: 'SciPy 1.0 Contributors'
+  - family-names: 'Vijaykumar'
+    given-names: 'Aditya'
+  - family-names: 'Bardelli'
+    given-names: 'Alessandro Pietro'
+  - family-names: 'Rothberg'
+    given-names: 'Alex'
+  - family-names: 'Hilboll'
+    given-names: 'Andreas'
+  - family-names: 'Kloeckner'
+    given-names: 'Andreas'
+  - family-names: 'Scopatz'
+    given-names: 'Anthony'
+  - family-names: 'Lee'
+    given-names: 'Antony'
+  - family-names: 'Rokem'
+    given-names: 'Ariel'
+  - family-names: 'Woods'
+    given-names: 'C. Nathan'
+  - family-names: 'Fulton'
+    given-names: 'Chad'
+  - family-names: 'Masson'
+    given-names: 'Charles'
+  - family-names: 'Häggström'
+    given-names: 'Christian'
+  - family-names: 'Fitzgerald'
+    given-names: 'Clark'
+  - family-names: 'Nicholson'
+    given-names: 'David A.'
+  - family-names: 'Hagen'
+    given-names: 'David R.'
+  - family-names: 'Pasechnik'
+    given-names: 'Dmitrii V.'
+  - family-names: 'Olivetti'
+    given-names: 'Emanuele'
+  - family-names: 'Martin'
+    given-names: 'Eric'
+  - family-names: 'Wieser'
+    given-names: 'Eric'
+  - family-names: 'Silva'
+    given-names: 'Fabrice'
+  - family-names: 'Lenders'
+    given-names: 'Felix'
+  - family-names: 'Wilhelm'
+    given-names: 'Florian'
+  - family-names: 'Young'
+    given-names: 'G.'
+  - family-names: 'Price'
+    given-names: 'Gavin A.'
+  - family-names: 'Ingold'
+    given-names: 'Gert-Ludwig'
+  - family-names: 'Allen'
+    given-names: 'Gregory E.'
+  - family-names: 'Lee'
+    given-names: 'Gregory R.'
+  - family-names: 'Audren'
+    given-names: 'Hervé'
+  - family-names: 'Probst'
+    given-names: 'Irvin'
+  - family-names: 'Dietrich'
+    given-names: 'Jörg P.'
+  - family-names: 'Silterra'
+    given-names: 'Jacob'
+  - family-names: 'Webber'
+    given-names: 'James T'
+  - family-names: 'Slavič'
+    given-names: 'Janko'
+  - family-names: 'Nothman'
+    given-names: 'Joel'
+  - family-names: 'Buchner'
+    given-names: 'Johannes'
+  - family-names: 'Kulick'
+    given-names: 'Johannes'
+  - family-names: 'Schönberger'
+    given-names: 'Johannes L.'
+  - family-names: 'de Miranda Cardoso'
+    given-names: 'José Vinícius'
+  - family-names: 'Reimer'
+    given-names: 'Joscha'
+  - family-names: 'Harrington'
+    given-names: 'Joseph'
+  - family-names: 'Rodríguez'
+    given-names: 'Juan Luis Cano'
+  - family-names: 'Nunez-Iglesias'
+    given-names: 'Juan'
+  - family-names: 'Kuczynski'
+    given-names: 'Justin'
+  - family-names: 'Tritz'
+    given-names: 'Kevin'
+  - family-names: 'Thoma'
+    given-names: 'Martin'
+  - family-names: 'Newville'
+    given-names: 'Matthew'
+  - family-names: 'Kümmerer'
+    given-names: 'Matthias'
+  - family-names: 'Bolingbroke'
+    given-names: 'Maximilian'
+  - family-names: 'Tartre'
+    given-names: 'Michael'
+  - family-names: 'Pak'
+    given-names: 'Mikhail'
+  - family-names: 'Smith'
+    given-names: 'Nathaniel J.'
+  - family-names: 'Nowaczyk'
+    given-names: 'Nikolai'
+  - family-names: 'Shebanov'
+    given-names: 'Nikolay'
+  - family-names: 'Pavlyk'
+    given-names: 'Oleksandr'
+  - family-names: 'Brodtkorb'
+    given-names: 'Per A.'
+  - family-names: 'Lee'
+    given-names: 'Perry'
+  - family-names: 'McGibbon'
+    given-names: 'Robert T.'
+  - family-names: 'Feldbauer'
+    given-names: 'Roman'
+  - family-names: 'Lewis'
+    given-names: 'Sam'
+  - family-names: 'Tygier'
+    given-names: 'Sam'
+  - family-names: 'Sievert'
+    given-names: 'Scott'
+  - family-names: 'Vigna'
+    given-names: 'Sebastiano'
+  - family-names: 'Peterson'
+    given-names: 'Stefan'
+  - family-names: 'More'
+    given-names: 'Surhud'
+  - family-names: 'Pudlik'
+    given-names: 'Tadeusz'
+  - family-names: 'Oshima'
+    given-names: 'Takuya'
+  - family-names: 'Pingel'
+    given-names: 'Thomas J.'
+  - family-names: 'Robitaille'
+    given-names: 'Thomas P.'
+  - family-names: 'Spura'
+    given-names: 'Thomas'
+  - family-names: 'Jones'
+    given-names: 'Thouis R.'
+  - family-names: 'Cera'
+    given-names: 'Tim'
+  - family-names: 'Leslie'
+    given-names: 'Tim'
+  - family-names: 'Zito'
+    given-names: 'Tiziano'
+  - family-names: 'Krauss'
+    given-names: 'Tom'
+  - family-names: 'Upadhyay'
+    given-names: 'Utkarsh'
+  - family-names: 'Halchenko'
+    given-names: 'Yaroslav O.'
+  - family-names: 'Vázquez-Baeza'
+    given-names: 'Yoshiki'
+  year: 2020
+  journal: 'Nature Methods'
+  volume: '17'
+  issue: '3'
+  start: '261'
+  end: '272'
+  doi: 10.1038/s41592-019-0686-2
+  identifiers:
+  - type: other
+    value: '32015543'
+    description: PMID
+- type: article
+  title: 'Autonomic aging – A dataset to quantify changes of cardiovascular autonomic function during healthy aging'
+  authors:
+  - family-names: 'Schumann'
+    given-names: 'Andy'
+  - family-names: 'Bär'
+    given-names: 'Karl-Jürgen'
+  year: 2022
+  journal: 'Scientific Data'
+  volume: '9'
+  issue: '1'
+  start: '95'
+  doi: 10.1038/s41597-022-01202-y
+  identifiers:
+  - type: other
+    value: '35322044'
+    description: PMID
+- type: data
+  title: 'Autonomic Aging: A dataset to quantify changes of cardiovascular autonomic function during healthy aging'
+  authors:
+  - family-names: 'Schumann'
+    given-names: 'Andy'
+  - family-names: 'Bär'
+    given-names: 'Karl'
+  year: 2021
+  publisher:
+    name: 'PhysioNet'
+  doi: 10.13026/2hsy-t491
+- type: article
+  title: 'Age-related alterations in the fractal scaling of cardiac interbeat interval dynamics'
+  authors:
+  - family-names: 'Iyengar'
+    given-names: 'N.'
+  - family-names: 'Peng'
+    given-names: 'C. K.'
+  - family-names: 'Morin'
+    given-names: 'R.'
+  - family-names: 'Goldberger'
+    given-names: 'A. L.'
+  - family-names: 'Lipsitz'
+    given-names: 'L. A.'
+  year: 1996
+  journal: 'American Journal of Physiology-Regulatory, Integrative and Comparative Physiology'
+  volume: '271'
+  issue: '4'
+  start: 'R1078'
+  end: 'R1084'
+  doi: 10.1152/ajpregu.1996.271.4.R1078
+  identifiers:
+  - type: other
+    value: '8898003'
+    description: PMID
+- type: data
+  title: 'Fantasia Database'
+  authors:
+  - family-names: 'Iyengar'
+    given-names: 'Nikhil'
+  - family-names: 'Peng'
+    given-names: 'C-K'
+  - family-names: 'Morin'
+    given-names: 'Raymond'
+  - family-names: 'Goldberger'
+    given-names: 'Ary L'
+  - family-names: 'Lipsitz'
+    given-names: 'Lewis A'
+  year: 1994
+  publisher:
+    name: 'physionet.org'
+  doi: 10.13026/C2RG61
+- type: article
+  title: 'PhysioBank, PhysioToolkit, and PhysioNet'
+  authors:
+  - family-names: 'Goldberger'
+    given-names: 'Ary L.'
+  - family-names: 'Amaral'
+    given-names: 'Luis A. N.'
+  - family-names: 'Glass'
+    given-names: 'Leon'
+  - family-names: 'Hausdorff'
+    given-names: 'Jeffrey M.'
+  - family-names: 'Ivanov'
+    given-names: 'Plamen Ch.'
+  - family-names: 'Mark'
+    given-names: 'Roger G.'
+  - family-names: 'Mietus'
+    given-names: 'Joseph E.'
+  - family-names: 'Moody'
+    given-names: 'George B.'
+  - family-names: 'Peng'
+    given-names: 'Chung-Kang'
+  - family-names: 'Stanley'
+    given-names: 'H. Eugene'
+  year: 2000
+  journal: 'Circulation'
+  volume: '101'
+  issue: '23'
+  doi: 10.1161/01.CIR.101.23.e215
+  identifiers:
+  - type: other
+    value: '10851218'
+    description: PMID
+- type: software
+  title: 'Waveform Database Software Package (WFDB) for Python'
+  authors:
+  - family-names: 'Xie'
+    given-names: 'Chen'
+  - family-names: 'McCullum'
+    given-names: 'Lucas'
+  - family-names: 'Johnson'
+    given-names: 'Alistair'
+  - family-names: 'Pollard'
+    given-names: 'Tom'
+  - family-names: 'Gow'
+    given-names: 'Brian'
+  - family-names: 'Moody'
+    given-names: 'Benjamin'
+  year: 2023
+  publisher:
+    name: 'PhysioNet'
+  doi: 10.13026/9njx-6322
+- type: data
+  title: 'Influence of vagus nerve stimulation on cardiac activity in pigs'
+  authors:
+  - family-names: 'Armitage'
+    given-names: 'Oliver'
+  - family-names: 'Sarkans'
+    given-names: 'Elvijs'
+  - family-names: 'Wernisch'
+    given-names: 'Lorenz'
+  - family-names: 'Fortier-Poisson'
+    given-names: 'Pascal'
+  - family-names: 'Berthon'
+    given-names: 'Antonin'
+  - family-names: 'Tessier-Larivière'
+    given-names: 'Olivier'
+  year: 2023
+  publisher:
+    name: 'SPARC Portal'
+  doi: 10.26275/dm5l-tspb
+- type: data
+  title: 'Single-electrode bidirectional control of heart rate via vagus nerve modulation in rat model'
+  authors:
+  - family-names: 'Bender'
+    given-names: 'Shane A'
+  - family-names: 'Green'
+    given-names: 'David B'
+  - family-names: 'Thakkar'
+    given-names: 'Varun S'
+  - family-names: 'Zimmerman'
+    given-names: 'Hope L'
+  - family-names: 'Elazab'
+    given-names: 'Mohamed'
+  - family-names: 'Kilgore'
+    given-names: 'Kevin L'
+  - family-names: 'Vrabec'
+    given-names: 'Tina L'
+  year: 2026
+  publisher:
+    name: 'SPARC Portal'
+  doi: 10.26275/5cwo-mkpz

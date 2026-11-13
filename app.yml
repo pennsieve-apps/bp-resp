@@ -1,0 +1,267 @@
+# yaml-language-server: $schema=https://schemas.pennsieve.io/app-manifest/v1.json
+schemaVersion: "1.0"
+application:
+  name: Blood Pressure, Respiration and Baroreflex
+  description: >-
+    Beat-to-beat arterial blood pressure (systolic, diastolic, beat-mean and pulse pressure; pulse
+    onsets by the slope sum function of Zong et al. 2003), breathing (breath onsets, rate, amplitude,
+    inspiration and expiration times, NeuroKit2 khodadad2018), spontaneous baroreflex sensitivity
+    (sequence method with up, down and all sequences; spectral alpha index in LF and HF and the LF
+    transfer-function gain with coherence >= 0.5, as compared in EuroBaVar) and respiratory sinus
+    arrhythmia (peak-to-trough and Porges-Bohrer, NeuroKit2), for humans and animals with species
+    presets (human, pig, dog, rabbit, rat, mouse). Reads physio-import's NWB recordings (or any NWB
+    file), optionally stim-events' stimulation epochs (left out of the resting estimates) and ecg-hrv's
+    R-peaks. Uncalibrated pressure is used for pulse timing only; recordings without pressure or
+    respiration are listed as skipped. Writes beat, breath, baroreflex and RSA tables, a regularly
+    sampled series.csv for stim-dose-response, and captioned figures. Research outputs.
+  type: processor
+  tags:
+    - physiology
+    - autonomic
+    - cardiovascular
+    - blood-pressure
+    - baroreflex
+    - respiration
+    - heart-rate-variability
+    - neuromodulation
+    - nwb
+runtime:
+  # One recording at a time; pressure, ECG and respiration are read a slice at a time and decimated to
+  # the species' working rate. Measured in Docker (amd64 emulation on an M-series Mac, --cpus 1
+  # --memory 2g): peak 510 MB and 9 s for the six 2 h Fantasia records (README "Runtime").
+  cpu: 1024
+  memory: 2048
+  computeTypes:
+    - standard
+  timeoutSeconds: 900
+parameters:
+  - name: SPECIES
+    type: string
+    label: Species
+    description: >-
+      Species preset (pressure-beat timing, plausible ranges, breathing band, baroreflex thresholds,
+      LF/HF bands, series rate). auto takes it from recordings.csv or the NWB Subject, else human.
+    defaultValue: auto
+    validValues: [auto, human, pig, dog, rabbit, rat, mouse]
+  - name: SERIES_HZ
+    type: string
+    label: Series rate (Hz)
+    description: Rate of the regular grid of series.csv; auto = the preset (4 Hz for humans and large animals, 10 Hz for rodents).
+    defaultValue: auto
+  - name: MAX_GAP_S
+    type: string
+    label: Largest gap (s)
+    description: >-
+      series.csv is marked valid=false where neighbouring usable beats are further apart than this
+      (breaths: at least 3 median breaths); auto = the preset.
+    defaultValue: auto
+  - name: BP_LOWPASS_HZ
+    type: string
+    label: Pressure low-pass (Hz)
+    description: Low-pass before the slope sum function; auto = 16 Hz for humans (Zong et al. 2003), scaled with heart rate for other species.
+    defaultValue: auto
+  - name: SSF_WINDOW_S
+    type: string
+    label: Slope-sum window (s)
+    description: Window of the slope sum function; auto = 0.128 s for humans (Zong et al. 2003), scaled with heart rate.
+    defaultValue: auto
+  - name: BP_REFRACTORY_S
+    type: string
+    label: Pulse refractory period (s)
+    description: Shortest time between two pulses; auto = 0.25 s for humans, scaled with heart rate.
+    defaultValue: auto
+  - name: SSF_THRESHOLD
+    type: number
+    label: Pulse threshold
+    description: A slope-sum pulse counts when it reaches this fraction of the running median of the last accepted pulses.
+    defaultValue: 0.5
+    min: 0.05
+    max: 1
+  - name: SSF_ONSET
+    type: number
+    label: Onset fraction
+    description: The pulse onset is where the slope sum, going back from its peak, falls below this fraction of the peak.
+    defaultValue: 0.02
+    min: 0.001
+    max: 0.5
+  - name: BP_JUMP
+    type: number
+    label: Beat jump limit
+    description: >-
+      A beat whose systolic or diastolic pressure differs from the median of its 10 neighbours by more
+      than this fraction of their pulse pressure is labelled artifact.
+    defaultValue: 0.5
+    min: 0.05
+  - name: ECTOPIC_FRAC
+    type: number
+    label: Ectopic interval limit
+    description: A beat whose inter-beat interval differs from the median of its neighbours by more than this fraction is labelled ectopic.
+    defaultValue: 0.3
+    min: 0.05
+    max: 1
+  - name: RESP_BAND
+    type: string
+    label: Breathing band (Hz)
+    description: Band-pass of the respiration before breath detection, e.g. 0.05-3; auto = the preset (NeuroKit2's 0.05-3 Hz for humans, pigs, dogs and rabbits; wider for rats and mice).
+    defaultValue: auto
+  - name: RESP_AMPLITUDE_MIN
+    type: number
+    label: Smallest breath
+    description: Extrema closer than this fraction of the median peak-to-trough distance are not breaths (NeuroKit2 amplitude_min).
+    defaultValue: 0.3
+    min: 0
+    max: 1
+  - name: RESP_POLARITY
+    type: string
+    label: Respiration polarity
+    description: inverted when inspiration goes down on the trace (qc.csv flags a likely inverted trace).
+    defaultValue: normal
+    validValues: [normal, inverted]
+  - name: RR_SOURCE
+    type: string
+    label: RR intervals from
+    description: >-
+      auto: ecg-hrv's beats when the hrv port is linked, else R-peaks detected here on the ECG, else
+      the pulse interval of the pressure (baroreflex only); or force hrv, ecg or bp.
+    defaultValue: auto
+    validValues: [auto, hrv, ecg, bp]
+  - name: SEQ_SBP_MMHG
+    type: string
+    label: Sequence SBP step (mmHg)
+    description: Smallest beat-to-beat systolic change in a baroreflex sequence; auto = the preset (1 mmHg for humans).
+    defaultValue: auto
+  - name: SEQ_RR_MS
+    type: string
+    label: Sequence RR step (ms)
+    description: Smallest beat-to-beat RR change in a baroreflex sequence; auto = the preset (4 ms for humans).
+    defaultValue: auto
+  - name: SEQ_LAG
+    type: string
+    label: Sequence lag (beats)
+    description: Beats between the systolic pressure and the RR interval it is paired with; auto = the lag (0-2, mouse 0-3) with the most sequences.
+    defaultValue: auto
+    validValues: [auto, "0", "1", "2", "3"]
+  - name: SEQ_MIN_BEATS
+    type: integer
+    label: Sequence length (beats)
+    description: Fewest consecutive beats in a sequence.
+    defaultValue: 3
+    min: 3
+    max: 20
+  - name: SEQ_MIN_R
+    type: number
+    label: Sequence correlation
+    description: Smallest RR-on-SBP correlation for a sequence to count.
+    defaultValue: 0.8
+    min: 0
+    max: 1
+  - name: SEQ_MIN_N
+    type: integer
+    label: Fewest sequences
+    description: The sequence BRS is valid only with at least this many sequences.
+    defaultValue: 3
+    min: 1
+  - name: LF_BAND
+    type: string
+    label: LF band (Hz)
+    description: Low-frequency band of the spectral baroreflex, e.g. 0.04-0.15; auto = the preset (the same bands as ecg-hrv).
+    defaultValue: auto
+  - name: HF_BAND
+    type: string
+    label: HF band (Hz)
+    description: High-frequency band of the spectral baroreflex, e.g. 0.15-0.4; auto = the preset.
+    defaultValue: auto
+  - name: COHERENCE_MIN
+    type: number
+    label: Coherence threshold
+    description: Spectral BRS is valid only where the SBP-RR squared coherence reaches this value.
+    defaultValue: 0.5
+    min: 0
+    max: 1
+  - name: SPECTRAL_WINDOW_S
+    type: string
+    label: Spectral window (s)
+    description: Welch window of the spectral baroreflex (50 % overlap, at least 3 clean windows needed); auto = the preset (120 s humans, 60 s rats and rabbits, 30 s mice).
+    defaultValue: auto
+  - name: EXCLUDE_STIM
+    type: boolean
+    label: Leave out stimulation
+    description: Leave the stimulation epochs of the events port (and AFTER_S after each) out of the resting baroreflex and RSA.
+    defaultValue: true
+  - name: AFTER_S
+    type: string
+    label: After stimulation (s)
+    description: Seconds after each stimulation also left out; auto = the preset (30 s humans, 10 s animals).
+    defaultValue: auto
+  - name: FIGURES
+    type: boolean
+    label: Figures
+    description: Write up to three figures per recording (pressure beats, breathing, baroreflex).
+    defaultValue: true
+  - name: THREADS
+    type: integer
+    label: Threads
+    description: BLAS threads; 0 = from the container's CPU quota, capped by its memory.
+    defaultValue: 0
+    min: 0
+inputs:
+  - name: physio
+    description: >-
+      physio-import's physio port (recordings.csv, channels.csv and one NWB file per recording) or any
+      NWB files with arterial pressure (bp), respiration (resp) and optionally ECG channels.
+    mediaTypes:
+      - application/x-hdf5; profile=nwb
+      - text/csv
+      - text/tab-separated-values
+      - application/json
+    placement: subfolder
+    required: true
+  - name: events
+    description: >-
+      Optional: stim-events' events port (stim-events/events.tsv). Stimulation and block epochs are
+      left out of the resting baroreflex and RSA and shaded in the figures.
+    mediaTypes:
+      - text/tab-separated-values
+      - text/csv
+      - application/json
+    placement: subfolder
+    required: false
+  - name: hrv
+    description: >-
+      Optional: ecg-hrv's hrv port (ecg-hrv/beats.csv). Its R-peaks and beat labels give the RR
+      intervals of the baroreflex and RSA; without it R-peaks are detected here.
+    mediaTypes:
+      - text/csv
+      - application/json
+      - image/png
+    placement: subfolder
+    required: false
+outputs:
+  - name: bp
+    description: >-
+      bp-resp/: bp_beats.csv, breaths.csv, series.csv (sbp/dbp/map/pp_mmhg, resp_rate_bpm, resp_amp on
+      a regular grid), brs.csv, rsa.csv, qc.csv, features.csv, figures/*.png, summary.json (headline
+      numbers and captioned figures for physio-report) and provenance.json.
+    mediaTypes:
+      - text/csv
+      - application/json
+      - image/png
+
+# How a release is tested before it is made public: the inputs a review run uses.
+# See app-deploy-service docs/app-manifest-review.md. The generator writes physio/, events/, hrv/
+# and truth.json; each port takes only its own subtree.
+review:
+  version: 1
+  inputs:
+    physio:
+      generate:
+        command: python -m tests.make_fixture "$REVIEW_INPUT_DIR"
+        root: physio
+    events:
+      generate:
+        command: python -m tests.make_fixture "$REVIEW_INPUT_DIR"
+        root: events
+    hrv:
+      generate:
+        command: python -m tests.make_fixture "$REVIEW_INPUT_DIR"
+        root: hrv
