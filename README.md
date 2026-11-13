@@ -160,13 +160,13 @@ Sources: pressure timing for humans from Zong et al. 2003 (16 Hz, 128 ms; 250 ms
 value of PhysioNet's `wabp`; the paper uses 300 ms), scaled by 75 bpm / typical HR for the other
 species (a Pennsieve choice). Heart-rate and RR ranges and LF/HF bands are ecg-hrv's preset table:
 PhysioZoo (Behar et al. 2018, Tables 2 and 3; numbers only, its code is GPL), Task Force 1996 (human
-bands), Thireau et al. 2008 (mouse bands, via PhysioZoo), Carnevali et al. 2023 (rat bands), Poletto
+bands), Behar et al. 2018b (mouse bands, via PhysioZoo; HF upper edge 5 Hz after Thireau et al. 2008), Carnevali et al. 2023 (rat bands), Poletto
 et al. 2011 and Salomão et al. 2015 (pig bands); rat and pig detector ranges are Pennsieve choices.
 Human sequence thresholds: 1 mmHg and 4 ms as Bertinieri et al. 1988 set them, quoted from the review
 by Bagnall-Hare et al. 2024 ("a minimum changes of at least ≥ 1 mmHg in blood pressure, ≥ 4 ms in
-RR-interval, and a delay of one beat"; the 1988 full texts could not be read). Rat: 1 mmHg and 5 ms
-as used by Molcan et al. 2026. Mouse: 0.5 mmHg and 5 ms with up to 3 beats of lag, as Pan et al. 2023
-did following Laude et al. 2009 ("A delay of 0 or 3 beats between BP and PI should be applied").
+RR-interval, and a delay of one beat is assumed"; the 1988 full texts could not be read). Rat: 1 mmHg and 5 ms
+as used by Molcan et al. 2026. Mouse: 0.5 mmHg and 5 ms as Pan et al. 2023 used (with a fixed 3-beat delay), and lags 0-3 tried
+following Laude et al. 2009 ("A delay of 0 or 3 beats between BP and PI should be applied").
 Pig, dog: human thresholds; rabbit 0.5 mmHg / 2 ms (Pennsieve choices: no published preset found).
 Breath band: NeuroKit2's `khodadad2018` 0.05–3 Hz; rodent bands, plausible pressure and breathing
 ranges, spectral windows, series rate, gaps and after-stimulation windows are Pennsieve choices.
@@ -337,6 +337,7 @@ Molcan et al. 2026 [doi:10.1038/s41440-026-02579-8](https://doi.org/10.1038/s414
 Kardos et al. 2001 [doi:10.1161/01.HYP.37.3.911](https://doi.org/10.1161/01.HYP.37.3.911);
 Grossman & Taylor 2007 [doi:10.1016/j.biopsycho.2005.11.014](https://doi.org/10.1016/j.biopsycho.2005.11.014);
 Behar et al. 2018 (PhysioZoo) [doi:10.3389/fphys.2018.01390](https://doi.org/10.3389/fphys.2018.01390);
+Behar et al. 2018b (mammalian HRV bands) [doi:10.3389/fphys.2018.01001](https://doi.org/10.3389/fphys.2018.01001);
 Task Force of the European Society of Cardiology and the North American Society of Pacing and
 Electrophysiology 1996 [doi:10.1161/01.CIR.93.5.1043](https://doi.org/10.1161/01.CIR.93.5.1043);
 Thireau et al. 2008 [doi:10.1113/expphysiol.2007.040733](https://doi.org/10.1113/expphysiol.2007.040733);

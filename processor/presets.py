@@ -5,8 +5,8 @@ work on a given species, each with its source. Every value can be overridden by 
 
 Sources (verified DOIs, full references in CITATION.cff):
   ZONG   Zong et al. 2003, Computers in Cardiology 30:259, doi:10.1109/CIC.2003.1291140: slope sum
-         function for adult human arterial pressure: 16 Hz low-pass, 128 ms SSF window, 250 ms
-         refractory ("eye-closing") period.
+         function for adult human arterial pressure: 16 Hz low-pass, 128 ms SSF window; the
+         refractory ("eye-closing") period is 250 ms as in PhysioNet's wabp (the paper uses 300 ms).
   PZ     Behar et al. 2018, PhysioZoo, Front Physiol 9:1390, doi:10.3389/fphys.2018.01390: Table 2
          (typical heart rate, RRmin, RRmax) and Table 3 (LF/HF bands). Numbers only; no PhysioZoo
          code is used (it is GPL-3.0). These are the same numbers ecg-hrv uses.
@@ -17,7 +17,7 @@ Sources (verified DOIs, full references in CITATION.cff):
   BAG    Bagnall-Hare et al. 2024, Phys Eng Sci Med 47:503, doi:10.1007/s13246-023-01380-y, a review
          of sequence-method settings: "Bertinieri et al [32] further refined the sequence selection
          criteria to include a minimum changes of at least >= 1 mmHg in blood pressure, >= 4 ms in
-         RR-interval, and a delay of one beat". The thresholds of Bertinieri et al. 1988 and Parati
+         RR-interval, and a delay of one beat is assumed". The thresholds of Bertinieri et al. 1988 and Parati
          et al. 1988 themselves could not be read (no open full text); BAG is the verified source.
   MOL    Molcan et al. 2026, Hypertens Res 49:1349, doi:10.1038/s41440-026-02579-8 (rat):
          ">= 1 mmHg for systolic BP and >= 5 ms for IBI".
@@ -96,7 +96,7 @@ class Preset:
 
 
 def _bp_timing(hr: float) -> tuple[float, float, float]:
-    """ZONG's 16 Hz / 128 ms / 250 ms for ~75 bpm adults, scaled to the species' heart rate."""
+    """ZONG's 16 Hz / 128 ms (and wabp's 250 ms refractory period) for ~75 bpm adults, scaled to the species' heart rate."""
     k = 75.0 / hr
     return round(16.0 / k, 1), round(0.128 * k, 4), round(0.25 * k, 4)
 
@@ -169,7 +169,7 @@ PRESETS: dict[str, Preset] = {
         10, 0.5, 10,
         {"bp": _BP_SCALED, "detector": _DET,
          "resp": "PENN band (mouse breathing reaches 5-7 Hz); " + _RANGES, "brs": SEQ_SOURCE["mouse"],
-         "bands": "PZ Table 3 (from Thireau et al. 2008)", "other": _COMMON}),
+         "bands": "PZ Table 3 (from Behar et al. 2018b; HF upper edge 5 Hz after Thireau et al. 2008)", "other": _COMMON}),
 }
 
 
