@@ -30,11 +30,17 @@ def _zoom_start(t: np.ndarray, good: np.ndarray, span: float) -> float:
 
 
 def bp_figure(path: Path, rid: str, res: dict) -> str:
-    bt, segs, cal, epochs = res["bp"], res["bp_segs"], res["calibrated"], res["epochs"]
+    bt, segs, cal, epochs = res["bp"], res["bp_zoom"], res["calibrated"], res["epochs"]
     unit = "mmHg" if cal else "a.u. (uncalibrated)"
     fig, ax = plt.subplots(2, 1, figsize=(11, 6.5), gridspec_kw={"height_ratios": [1, 1.2]})
     span = 10.0 * 75.0 / max(res["pre"].typical_hr_bpm, 1)
-    a = _zoom_start(bt.sys_t, bt.good, span)
+    if segs:      # the excerpt read during detection (middle of the recording)
+        a = segs[0].t0
+        m0 = (bt.onset_t >= a) & (bt.good)
+        if m0.any():
+            a = max(segs[0].t0, float(bt.onset_t[m0][0]) - 0.1 * span)
+    else:
+        a = _zoom_start(bt.sys_t, bt.good, span)
     for sg in segs:
         t = sg.times()
         m = (t >= a) & (t <= a + span)

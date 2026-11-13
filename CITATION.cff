@@ -5,8 +5,8 @@ title: bp-resp
 abstract: Beat-to-beat arterial blood pressure (systolic, diastolic, beat-mean and pulse pressure, with pulse
   onsets found by the slope sum function of Zong et al. 2003), breathing (breath onsets, rate, amplitude,
   inspiration and expiration times with NeuroKit2), spontaneous baroreflex sensitivity by the sequence
-  method (Bertinieri, Parati et al.) and the spectral alpha index and transfer-function gain (as compared
-  in EuroBaVar), and respiratory sinus arrhythmia (peak-to-trough and Porges-Bohrer, NeuroKit2), for
+  method (Bertinieri et al. 1985, Parati et al. 1988) and the spectral alpha index and transfer-function gain
+  (techniques compared in EuroBaVar), and respiratory sinus arrhythmia (peak-to-trough and Porges-Bohrer, NeuroKit2), for
   physiological recordings of humans and animals (species presets for human, pig, dog, rabbit, rat and
   mouse). Reads NWB files as written by physio-import, optionally stimulation epochs from stim-events and
   R-peaks from ecg-hrv; writes beat, breath and baroreflex tables and a regularly sampled series.csv for
@@ -111,6 +111,52 @@ references:
   identifiers:
   - type: other
     value: '3410530'
+    description: PMID
+- type: article
+  title: 'A new approach to analysis of the arterial baroreflex.'
+  authors:
+  - family-names: 'Bertinieri'
+    given-names: 'G'
+  - family-names: 'di Rienzo'
+    given-names: 'M'
+  - family-names: 'Cavallazzi'
+    given-names: 'A'
+  - family-names: 'Ferrari'
+    given-names: 'A U'
+  - family-names: 'Pedotti'
+    given-names: 'A'
+  - family-names: 'Mancia'
+    given-names: 'G'
+  year: 1985
+  journal: 'Journal of Hypertension. Supplement'
+  volume: '3'
+  issue: '3'
+  start: 'S79'
+  end: 'S81'
+  url: https://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=pubmed&id=2856787&rettype=abstract&retmode=text
+  identifiers:
+  - type: other
+    value: '2856787'
+    description: PMID
+- type: article
+  title: 'A Comparison of Three Quantification Methods for Estimation of Respiratory Sinus Arrhythmia'
+  authors:
+  - family-names: 'Grossman'
+    given-names: 'P.'
+  - family-names: 'van Beek'
+    given-names: 'J.'
+  - family-names: 'Wientjes'
+    given-names: 'C.'
+  year: 1990
+  journal: 'Psychophysiology'
+  volume: '27'
+  issue: '6'
+  start: '702'
+  end: '714'
+  doi: 10.1111/j.1469-8986.1990.tb03198.x
+  identifiers:
+  - type: other
+    value: '2100356'
     description: PMID
 - type: article
   title: 'Evaluation of baroreceptor reflex by blood pressure monitoring in unanesthetized cats'

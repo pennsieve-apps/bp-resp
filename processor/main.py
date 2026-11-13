@@ -96,6 +96,8 @@ CITATIONS = ["10.3758/s13428-020-01516-y", "10.1109/CIC.2003.1291140", "10.1161/
              "10.1152/ajpregu.00709.2002", "10.1088/1361-6579/aad7e6", "10.1016/j.biopsycho.2011.11.009",
              "10.7554/eLife.78362"]
 
+WINDOW_S, PAD_S = 600.0, 10.0      # signals are read and analysed 10 min (+10 s each side) at a time
+
 DEFAULTS = {
     "SPECIES": "auto", "SERIES_HZ": "auto", "MAX_GAP_S": "auto",
     "BP_LOWPASS_HZ": "auto", "SSF_WINDOW_S": "auto", "BP_REFRACTORY_S": "auto", "SSF_THRESHOLD": "0.5",
@@ -267,33 +269,42 @@ def fmt(v, sig: int = 6) -> str:
 
 # --------------------------------------------------------------------------- series
 
-def grid_rows(rid: str, segments: list, t: np.ndarray, vals: dict[str, np.ndarray], hz: float,
-              max_gap_s: float) -> list:
-    """series.csv rows: each variable linearly interpolated between its event times onto the regular
-    grid (multiples of 1/hz) inside each signal segment; valid=false outside the first-last event,
-    and where the neighbouring events are more than max_gap_s apart."""
-    rows = []
-    for seg in segments:
-        g = np.arange(math.ceil(seg.t0 * hz) / hz, seg.t1 + 1e-9, 1.0 / hz)
-        if g.size == 0:
+def _fmt_array(v: np.ndarray, sig: int = 6) -> np.ndarray:
+    out = np.char.mod(f"%.{sig}g", np.where(np.isfinite(v), v, 0.0)).astype(object)
+    out[~np.isfinite(v)] = ""
+    return out
+
+
+def write_grid(w, rid: str, spans: list, t: np.ndarray, vals: dict[str, np.ndarray], hz: float,
+               max_gap_s: float) -> int:
+    """Write series.csv rows: each variable linearly interpolated between its event times onto the
+    regular grid (multiples of 1/hz) inside each signal span; valid=false outside the first-last
+    event and where the neighbouring events are more than max_gap_s apart. Written a span at a time
+    (vectorised), never held for the whole run. Returns the number of rows."""
+    n = 0
+    for s0, s1 in spans:
+        k0, k1 = math.ceil(s0 * hz - 1e-9), math.floor(s1 * hz + 1e-9)
+        if k1 < k0:
             continue
-        m = (t >= seg.t0) & (t <= seg.t1)
-        tt = t[m]
-        if tt.size >= 2:
-            j = np.clip(np.searchsorted(tt, g), 1, tt.size - 1)
-            inside = (g >= tt[0]) & (g <= tt[-1])
-            valid = inside & ((tt[j] - tt[j - 1]) <= max_gap_s)
-        else:
-            inside = valid = np.zeros(g.size, bool)
-        for var, v in vals.items():
+        for c0 in range(k0, k1 + 1, 100000):
+            g = np.arange(c0, min(k1, c0 + 99999) + 1) / hz
+            m = (t >= s0) & (t <= s1)
+            tt = t[m]
             if tt.size >= 2:
-                y = np.interp(g, tt, v[m])
+                j = np.clip(np.searchsorted(tt, g), 1, tt.size - 1)
+                inside = (g >= tt[0]) & (g <= tt[-1])
+                valid = inside & ((tt[j] - tt[j - 1]) <= max_gap_s)
             else:
-                y = np.full(g.size, np.nan)
-            for gt, yy, ins, ok in zip(g, y, inside, valid):
-                rows.append([rid, f"{gt:.4f}".rstrip("0").rstrip("."), var, fmt(yy) if ins else "",
-                             "true" if ok else "false"])
-    return rows
+                inside = valid = np.zeros(g.size, bool)
+            ts = np.char.mod("%.4f", g)
+            ts = np.char.rstrip(np.char.rstrip(ts, "0"), ".")
+            vs = np.where(valid, "true", "false")
+            for var, v in vals.items():
+                y = np.interp(g, tt, v[m]) if tt.size >= 2 else np.full(g.size, np.nan)
+                y = np.where(inside, y, np.nan)
+                w.writerows(zip([rid] * g.size, ts, [var] * g.size, _fmt_array(y), vs))
+                n += g.size
+    return n
 
 
 def in_epochs(t: np.ndarray, epochs: list) -> np.ndarray:
@@ -324,7 +335,11 @@ def process(rec: I.Recording, prm: dict, epochs_rows: list[dict], hrv_beats: I.E
     qc = out["qc"]
     if "used" in sp_why or "unknown" in sp_why:
         qc.append([rid, "species", sp, sp_why])
-    bp_ch, resp_ch, ecg_ch = I.pick_channel(rec, "bp"), I.pick_channel(rec, "resp"), I.pick_channel(rec, "ecg")
+    picks = {t: I.pick_channel(rec, t) for t in ("bp", "resp", "ecg")}
+    bp_ch, resp_ch, ecg_ch = picks["bp"][0], picks["resp"][0], picks["ecg"][0]
+    for t, (c, note) in picks.items():
+        if note:
+            qc.append([rid, f"{t}_channel_choice", c.name, note])
     info = {"species": sp, "species_source": sp_why, "preset": pre.name,
             "channels": {k: (c.name if c else None) for k, c in (("bp", bp_ch), ("resp", resp_ch), ("ecg", ecg_ch))}}
     flat_types = [c.type for c in rec.channels if c.status == "flat" and c.type in ("bp", "resp")]
@@ -343,24 +358,27 @@ def process(rec: I.Recording, prm: dict, epochs_rows: list[dict], hrv_beats: I.E
     res = {"bp": None, "breaths": None, "ecg": None, "brs": None, "rsa": None, "epochs": epochs, "pre": pre}
 
     # ---------------- blood pressure
-    bp_segs = []
+    bp_zoom, bp_spans = [], []
     calibrated = False
     if bp_ch is not None:
         calibrated = bool(bp_ch.calibrated) and bp_ch.unit.strip().lower() in ("mmhg", "mm hg")
         if bp_ch.calibrated and not calibrated:
             qc.append([rid, "bp_unit", bp_ch.unit, "calibrated, but the unit is not mmHg: treated as uncalibrated"])
         head["calibrated"] = calibrated
-        bp_segs = I.read_channel(rec.nwb, bp_ch.name, pre.bp_hz)
         s = B.BpSettings(pre.bp_lowpass_hz, pre.ssf_window_s, pre.bp_refractory_s, prm["ssf_threshold"],
                          prm["ssf_onset"], pre.rr_min_s, pre.rr_max_s, pre.sbp_range, pre.dbp_range, pre.pp_min_mmhg,
                          prm["bp_jump"], prm["ectopic_frac"])
-        bt = B.beats(bp_segs, s, calibrated)
+        t_first, t_last = I.channel_extent(rec.nwb, bp_ch.name)
+        zoom_span = 15.0 * 75.0 / max(pre.typical_hr_bpm, 1)
+        bt, bp_spans, bp_zoom = B.beats_windowed(I.iter_windows(rec.nwb, bp_ch.name, pre.bp_hz, WINDOW_S, PAD_S), s,
+                                                 calibrated, (t_first + t_last) / 2.0, zoom_span)
+        bp_fs = min(I.native_rate(rec.nwb, bp_ch.name), pre.bp_hz)
         res["bp"] = bt
         g = bt.good
         n_art, n_ect = int(np.sum(bt.label == "artifact")), int(np.sum(bt.label == "ectopic"))
         pct_art = 100.0 * n_art / bt.n if bt.n else float("nan")
         qc.append([rid, "bp_beats", bt.n, f"{bt.n} pressure beats on '{bp_ch.name}' ({bp_ch.original_name}) at "
-                   f"{bp_segs[0].fs if bp_segs else 0:g} Hz; {n_art} artifact, {n_ect} ectopic"
+                   f"<= {bp_fs:g} Hz; {n_art} artifact, {n_ect} ectopic"
                    + ("" if calibrated else "; uncalibrated: timing only, no pressures written")])
         why_counts = {}
         for w in bt.why[~g]:
@@ -382,6 +400,19 @@ def process(rec: I.Recording, prm: dict, epochs_rows: list[dict], hrv_beats: I.E
                 head[f"{k}_mmhg"] = num(m_, 2)
                 feats.append([rid, bp_ch.name, f"bp_{k}_mean_mmhg", fmt(m_)])
                 feats.append([rid, bp_ch.name, f"bp_{k}_sd_mmhg", fmt(sd_)])
+            steps = B.level_steps(bt)
+            if steps:
+                qc.append([rid, "bp_level_steps", len(steps), "abrupt level changes of the systolic pressure (> 8 "
+                           "mmHg between the 10 beats before and after, within 3 beats; a finger-cuff device "
+                           "re-calibrating, a transducer re-zeroed or moved): " + ", ".join(
+                               f"{t:.0f} s ({d:+.0f} mmHg)" for t, d in steps[:20]) + (" ..." if len(steps) > 20 else "")
+                           + "; absolute pressure levels are doubtful, beat-to-beat changes (BRS) less affected"])
+                out["warnings"].append(f"{rid}: {len(steps)} abrupt pressure level step(s): absolute levels doubtful")
+            dr = B.drift(bt)
+            if dr is not None and abs(dr) > 20:
+                qc.append([rid, "bp_drift", round(dr, 1), "median systolic pressure of the last 2 min minus the first "
+                           "2 min (mmHg): a drift this large may be calibration drift rather than physiology"])
+                out["warnings"].append(f"{rid}: systolic pressure drifts {dr:+.0f} mmHg over the recording")
             if not (20 <= head["map_mmhg"] <= 200):
                 qc.append([rid, "bp_calibration_doubtful", head["map_mmhg"],
                            "mean arterial pressure outside 20-200 mmHg: check the channel's unit and scale"])
@@ -398,9 +429,9 @@ def process(rec: I.Recording, prm: dict, epochs_rows: list[dict], hrv_beats: I.E
                                     fmt(bt.ibi_s[i] * 1000.0), bt.label[i]])
         if calibrated:
             gt = bt.sys_t[g]
-            out["series"].extend(grid_rows(rid, bp_segs, gt, {"sbp_mmhg": bt.sbp[g], "dbp_mmhg": bt.dbp[g],
-                                                              "map_mmhg": bt.map[g], "pp_mmhg": bt.pp[g]},
-                                           pre.series_hz, pre.max_gap_s))
+            write_grid(out["series"], rid, bp_spans, gt, {"sbp_mmhg": bt.sbp[g], "dbp_mmhg": bt.dbp[g],
+                                                          "map_mmhg": bt.map[g], "pp_mmhg": bt.pp[g]},
+                       pre.series_hz, pre.max_gap_s)
 
     # ---------------- respiration
     resp_segs = []
@@ -430,9 +461,8 @@ def process(rec: I.Recording, prm: dict, epochs_rows: list[dict], hrv_beats: I.E
             feats.append([rid, resp_ch.name, "resp_n_breaths", str(br.n)])
             mid = br.onset_s[g] + br.duration_s[g] / 2.0
             gap = max(pre.max_gap_s, 3.0 * float(np.median(br.duration_s[g])))
-            out["series"].extend(grid_rows(rid, resp_segs, mid, {"resp_rate_bpm": br.rate_bpm[g],
-                                                                 "resp_amp": br.amplitude[g]},
-                                           pre.series_hz, gap))
+            write_grid(out["series"], rid, [(sg.t0, sg.t1) for sg in resp_segs], mid,
+                       {"resp_rate_bpm": br.rate_bpm[g], "resp_amp": br.amplitude[g]}, pre.series_hz, gap)
         else:
             out["warnings"].append(f"{rid}: fewer than 5 breaths found on {resp_ch.name}")
         for i in range(br.n):
@@ -450,7 +480,7 @@ def process(rec: I.Recording, prm: dict, epochs_rows: list[dict], hrv_beats: I.E
         elif src in ("auto", "ecg") and ecg_ch is not None:
             from processor import ecgbeats as EB  # noqa: PLC0415
             ecg_hz = 500.0 if pre.typical_hr_bpm < 200 else 1000.0
-            ecg = EB.detect(I.read_channel(rec.nwb, ecg_ch.name, ecg_hz), pre, 0.2)
+            ecg = EB.detect(I.iter_windows(rec.nwb, ecg_ch.name, ecg_hz, WINDOW_S, 5.0), pre, 0.2)
             ecg.note += f" on '{ecg_ch.name}' ({ecg_ch.original_name})"
         elif src == "hrv":
             qc.append([rid, "rr_source", "none", "RR_SOURCE=hrv but ecg-hrv's beats.csv has no rows for this recording"])
@@ -494,8 +524,7 @@ def process(rec: I.Recording, prm: dict, epochs_rows: list[dict], hrv_beats: I.E
         res["rsa"] = rsa_estimate(rid, br, ecg, pre, epochs, rsa_rows, feats, head)
 
     out["headlines"][rid] = head
-    res.update({"status": "ok", "seconds": round(time.monotonic() - t0, 2), "bp_segs": bp_segs,
-                "resp_segs": resp_segs, "calibrated": calibrated, **info})
+    res.update({"status": "ok", "seconds": round(time.monotonic() - t0, 2), "bp_zoom": bp_zoom, "calibrated": calibrated, **info})
     return res
 
 
@@ -626,6 +655,41 @@ def peak_rss_mb() -> float:
     return round(r / 2**20 if sys.platform == "darwin" else r / 1024, 1)
 
 
+class Sink:
+    """A table written as it is produced (rows are never collected for the whole run): append,
+    extend and += write rows to the open CSV file."""
+
+    def __init__(self, path: Path, header: list):
+        self.fh = open(path, "w", newline="", encoding="utf-8")
+        self.w = csv.writer(self.fh, lineterminator="\n")
+        self.w.writerow(header)
+        self.n = 0
+
+    @staticmethod
+    def _cell(v):
+        return "" if v is None else (fmt(v) if isinstance(v, (float, np.floating)) else v)
+
+    def append(self, row) -> None:
+        self.w.writerow([self._cell(v) for v in row])
+        self.n += 1
+
+    def extend(self, rows) -> None:
+        for r in rows:
+            self.append(r)
+
+    def __iadd__(self, rows):
+        self.extend(rows)
+        return self
+
+    def writerows(self, rows) -> None:      # series.csv: already formatted
+        for r in rows:
+            self.w.writerow(r)
+            self.n += 1
+
+    def close(self) -> None:
+        self.fh.close()
+
+
 def write_csv(path: Path, header: list, rows: list) -> None:
     with open(path, "w", newline="", encoding="utf-8") as fh:
         w = csv.writer(fh, lineterminator="\n")
@@ -669,7 +733,7 @@ def main() -> int:
         except ValueError:
             return str(p)
 
-    out = {k: [] for k in HEAD}
+    out = {k: Sink(out_dir / f"{k}.csv", h) for k, h in HEAD.items()}
     out.update({"warnings": [], "headlines": {}, "uncalibrated": []})
     per_rec, figures = {}, []
     n_ok = n_failed = 0
@@ -715,8 +779,8 @@ def main() -> int:
                 log.warning("%s: figure failed: %s", rid, e)
                 log.info(traceback.format_exc())
 
-    for name in ("bp_beats", "breaths", "series", "brs", "rsa", "qc", "features"):
-        write_csv(out_dir / f"{name}.csv", HEAD[name], out[name])
+    for name in HEAD:
+        out[name].close()
 
     finished = datetime.now(timezone.utc)
     provenance = {

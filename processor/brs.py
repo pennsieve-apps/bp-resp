@@ -9,7 +9,8 @@ threshold at every beat and the RR interval, LAG beats later, lengthens by at le
 the correlation r >= SEQ_MIN_R. BRS = the mean slope over the sequences (up, down, all). LAG is 0, 1
 or 2 beats, or auto: the lag with the most sequences.
 
-Spectral methods (EuroBaVar): SBP and RR are interpolated onto a regular grid; Welch-averaged
+Spectral methods (two of the techniques compared in EuroBaVar; the coherence >= 0.5 rule is the usual
+convention of spectral BRS studies, not a number taken from EuroBaVar's text): SBP and RR are interpolated onto a regular grid; Welch-averaged
 (Hann, 50 % overlap, linear detrend per window) auto- and cross-spectra over the windows that are
 free of gaps, artefacts and stimulation:
   alpha-lf, alpha-hf    sqrt(P_RR / P_SBP) over the LF or HF band, valid when the mean squared

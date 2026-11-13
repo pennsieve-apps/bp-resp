@@ -99,6 +99,7 @@ class ChannelInfo:
     status_description: str
     original_name: str
     typing: str
+    derived_from: str = ""    # empty for a raw channel; else the channel it was derived from (or `unknown`)
 
 
 @dataclass
@@ -212,7 +213,8 @@ def find_physio(root: Path) -> PhysioInput:
                 name, (r.get("type") or "other").strip().lower(), (r.get("unit") or "").strip(),
                 (r.get("calibrated") or "").strip().lower() in ("true", "1", "yes"),
                 (r.get("status") or "").strip().lower(), (r.get("status_description") or "").strip(),
-                (r.get("original_name") or name).strip(), (r.get("typing") or "").strip()))
+                (r.get("original_name") or name).strip(), (r.get("typing") or "").strip(),
+                (r.get("derived_from") or "").strip()))
     for rec in recs.values():
         if not rec.channels:
             try:
@@ -228,19 +230,34 @@ def find_physio(root: Path) -> PhysioInput:
     return PhysioInput(sorted(recs.values(), key=lambda r: r.recording_id), sorted(set(rels)))
 
 
-def pick_channel(rec: Recording, typ: str) -> ChannelInfo | None:
-    """The channel of a type to analyse: a `good` one first, then by name (`bp` before `bp-2`)."""
-    cands = [c for c in rec.channels if c.type == typ]
+def pick_channel(rec: Recording, typ: str) -> tuple[ChannelInfo | None, str]:
+    """The channel of a type to analyse, and a note when the choice needs explaining. Raw channels
+    come first (conventions.md: a processed copy, `derived_from` set, is used only when no raw channel
+    of the type exists), then status (`good` before unknown, `noisy`, `saturated`; never `flat`), then
+    the name (`bp` before `bp-2`)."""
+    cands = [c for c in rec.channels if c.type == typ and c.status != "flat"]
     if not cands:
-        return None
-    rank = {"good": 0, "": 1, "noisy": 2, "saturated": 3, "flat": 9}
+        return None, ""
+    rank = {"good": 0, "": 1, "noisy": 2, "saturated": 3}
 
     def key(c):
         m = re.search(r"-(\d+)$", c.name)
         return (rank.get(c.status, 5), int(m.group(1)) if m else 0, c.name)
 
-    best = sorted(cands, key=key)[0]
-    return None if best.status == "flat" else best
+    raw = [c for c in cands if not c.derived_from]
+    derived = [c for c in cands if c.derived_from]
+    if raw:
+        best = sorted(raw, key=key)[0]
+        note = ""
+        better = [d for d in derived if rank.get(d.status, 5) < rank.get(best.status, 5)]
+        if better:
+            note = (f"raw '{best.name}' ({best.original_name}, status {best.status or 'unknown'}) used rather than "
+                    f"the processed copy '{better[0].name}' ({better[0].original_name}, status {better[0].status}): "
+                    "conventions prefer raw channels")
+        return best, note
+    best = sorted(derived, key=key)[0]
+    return best, (f"only a processed copy is available: '{best.name}' ({best.original_name}, derived from "
+                  f"{best.derived_from})")
 
 
 # --------------------------------------------------------------------------- events and beats
@@ -386,6 +403,18 @@ def _raw_segments(g: h5py.Group, n: int) -> list[tuple[int, int, float, float]]:
     return out
 
 
+def channel_extent(nwb: Path, name: str) -> tuple[float, float]:
+    """Time of the first and last sample of a channel."""
+    with h5py.File(nwb, "r") as f:
+        g = f["acquisition"][name]
+        segs = _raw_segments(g, int(g["data"].shape[0]))
+    if not segs:
+        return 0.0, 0.0
+    a, b, t0, fs = segs[0]
+    a2, b2, t02, fs2 = segs[-1]
+    return t0, t02 + (b2 - a2 - 1) / fs2
+
+
 def native_rate(nwb: Path, name: str) -> float:
     with h5py.File(nwb, "r") as f:
         g = f["acquisition"][name]
@@ -435,6 +464,48 @@ def read_channel(nwb: Path, name: str, max_hz: float) -> list[Segment]:
             fs_out = fs / q
             out.extend(_split_nan(x, t0, fs_out))
     return out
+
+
+def iter_windows(nwb: Path, name: str, max_hz: float, win_s: float = 600.0, pad_s: float = 10.0):
+    """The channel a window at a time: yields (segments, (core_t0, core_t1)) where segments are the
+    NaN-free pieces of the window plus pad_s on each side, decimated to <= max_hz like read_channel.
+    A caller keeps what it finds inside the core, so every event is reported once, and memory stays
+    bounded by the window whatever the recording's length."""
+    from scipy.signal import sosfiltfilt  # noqa: PLC0415
+
+    with h5py.File(nwb, "r") as f:
+        g = f["acquisition"][name]
+        d = g["data"]
+        conv = float(d.attrs.get("conversion", 1.0))
+        offs = float(d.attrs.get("offset", 0.0))
+        n = int(d.shape[0])
+        col = 0 if d.ndim == 2 else None
+        segs = _raw_segments(g, n)
+    for a, b, t0, fs in segs:
+        q = max(1, int(math.floor(fs / max_hz + 1e-9)))
+        sos = _antialias(fs, q) if q > 1 else None
+        win = max(q, int(round(win_s * fs / q)) * q)
+        pad = int(round(pad_s * fs / q)) * q
+        for i in range(a, b, win):
+            lo, hi = max(a, i - pad), min(b, i + win + pad)
+            with h5py.File(nwb, "r") as f:
+                dd = f["acquisition"][name]["data"]
+                x = np.asarray(dd[lo:hi] if col is None else dd[lo:hi, col], dtype=np.float64)
+            if conv != 1.0:
+                x *= conv
+            if offs:
+                x += offs
+            first = lo + ((a - lo) % q)          # samples on the global decimation grid a + k q
+            if sos is not None:
+                bad = ~np.isfinite(x)
+                if bad.any():
+                    x[bad] = np.interp(np.flatnonzero(bad), np.flatnonzero(~bad), x[~bad]) if (~bad).any() else 0.0
+                if x.size > 27:
+                    x = sosfiltfilt(sos, x)
+                x[bad] = np.nan
+            xd = x[first - lo::q]
+            core = (t0 + (i - a) / fs, t0 + (min(b, i + win) - a) / fs)
+            yield _split_nan(xd, t0 + (first - a) / fs, fs / q), core
 
 
 def _split_nan(x: np.ndarray, t0: float, fs: float) -> list[Segment]:

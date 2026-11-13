@@ -7,7 +7,7 @@ application:
     onsets by the slope sum function of Zong et al. 2003), breathing (breath onsets, rate, amplitude,
     inspiration and expiration times, NeuroKit2 khodadad2018), spontaneous baroreflex sensitivity
     (sequence method with up, down and all sequences; spectral alpha index in LF and HF and the LF
-    transfer-function gain with coherence >= 0.5, as compared in EuroBaVar) and respiratory sinus
+    transfer-function gain with coherence >= 0.5, techniques compared in EuroBaVar) and respiratory sinus
     arrhythmia (peak-to-trough and Porges-Bohrer, NeuroKit2), for humans and animals with species
     presets (human, pig, dog, rabbit, rat, mouse). Reads physio-import's NWB recordings (or any NWB
     file), optionally stim-events' stimulation epochs (left out of the resting estimates) and ecg-hrv's

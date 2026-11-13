@@ -46,46 +46,53 @@ def _notch(y: np.ndarray, fs: float, f0: float) -> np.ndarray:
     return y
 
 
-def detect(segments: list[Segment], preset, ectopic_frac: float = 0.2) -> EcgBeats:
+def _peaks(seg: Segment, preset, mains: float | None) -> tuple[np.ndarray, float]:
     import neurokit2 as nk  # noqa: PLC0415
 
-    times, good = [], []
-    for seg in segments:
-        x, fs = seg.x, seg.fs
-        if x.size < int(3 * fs):
-            continue
-        lo, hi = preset.ecg_band_hz
-        hi = min(hi, 0.45 * fs)
-        clean = nk.signal_filter(x, sampling_rate=fs, lowcut=lo, highcut=hi, method="butterworth", order=2)
-        clean = _notch(clean, fs, detect_mains(x[: int(600 * fs)], fs))
-        best = None
-        for sign in (1.0, -1.0):
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                pk = np.asarray(nk.ecg_findpeaks(sign * clean, sampling_rate=fs, method="neurokit",
-                                                 smoothwindow=preset.ecg_smooth_s, avgwindow=preset.ecg_avg_s,
-                                                 mindelay=preset.ecg_refractory_s)["ECG_R_Peaks"], dtype=np.int64)
-            amp = float(np.median(sign * clean[pk])) if pk.size else -np.inf
-            if best is None or amp > best[0]:
-                best = (amp, pk)
-        pk = best[1]
-        if pk.size < 3:
-            continue
-        t = seg.t0 + pk / fs
-        rr = np.diff(t)
-        ok_rr = (rr >= preset.rr_min_s) & (rr <= preset.rr_max_s)
-        med = np.array([np.median(rr[max(0, i - 5):i + 6]) for i in range(rr.size)])
-        ok_rr &= np.abs(rr - med) <= ectopic_frac * med
-        g = np.ones(t.size, bool)
-        # beat k is usable when both RR intervals touching it are normal
-        g[:-1] &= ok_rr
-        g[1:] &= ok_rr
-        # the first and last beat of a segment only border one interval: keep them when it is normal
-        g[0] = ok_rr[0]
-        g[-1] = ok_rr[-1]
-        times.append(t)
-        good.append(g)
+    x, fs = seg.x, seg.fs
+    lo, hi = preset.ecg_band_hz
+    hi = min(hi, 0.45 * fs)
+    clean = nk.signal_filter(x, sampling_rate=fs, lowcut=lo, highcut=hi, method="butterworth", order=2)
+    if mains is None:
+        mains = detect_mains(x[: int(600 * fs)], fs)
+    clean = _notch(clean, fs, mains)
+    best = None
+    for sign in (1.0, -1.0):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            pk = np.asarray(nk.ecg_findpeaks(sign * clean, sampling_rate=fs, method="neurokit",
+                                             smoothwindow=preset.ecg_smooth_s, avgwindow=preset.ecg_avg_s,
+                                             mindelay=preset.ecg_refractory_s)["ECG_R_Peaks"], dtype=np.int64)
+        amp = float(np.median(sign * clean[pk])) if pk.size else -np.inf
+        if best is None or amp > best[0]:
+            best = (amp, pk)
+    return seg.t0 + best[1] / fs, mains
+
+
+def detect(windows, preset, ectopic_frac: float = 0.2) -> EcgBeats:
+    """R-peaks over iter_windows() (each window with padding; peaks kept in the window's core), then
+    labelled over the whole recording. Memory is bounded by the window."""
+    times, mains = [], None
+    for segs, (c0, c1) in windows:
+        for seg in segs:
+            if seg.x.size < int(3 * seg.fs):
+                continue
+            t, mains = _peaks(seg, preset, mains)
+            t = t[(t >= c0) & (t < c1)]
+            if t.size:
+                times.append(t)
     if not times:
         return EcgBeats(np.zeros(0), np.zeros(0, bool), "detected", "no R-peaks found")
-    return EcgBeats(np.concatenate(times), np.concatenate(good), "detected",
-                    "R-peaks detected here (NeuroKit2 'neurokit' detector, species preset)")
+    t = np.unique(np.round(np.concatenate(times), 6))
+    if t.size < 3:
+        return EcgBeats(t, np.zeros(t.size, bool), "detected", "too few R-peaks")
+    rr = np.diff(t)
+    ok_rr = (rr >= preset.rr_min_s) & (rr <= preset.rr_max_s)
+    from scipy.ndimage import median_filter  # noqa: PLC0415
+    med = median_filter(rr, size=11, mode="nearest")
+    ok_rr &= np.abs(rr - med) <= ectopic_frac * med
+    g = np.ones(t.size, bool)
+    # beat k is usable when both RR intervals touching it are normal (the first and last: their one)
+    g[:-1] &= ok_rr
+    g[1:] &= ok_rr
+    return EcgBeats(t, g, "detected", "R-peaks detected here (NeuroKit2 'neurokit' detector, species preset)")

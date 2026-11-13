@@ -1,47 +1,31 @@
 """
-Respiratory sinus arrhythmia (RSA): the rise and fall of heart rate with breathing.
+Respiratory sinus arrhythmia (RSA): the rise and fall of heart period with breathing.
 
-Human recordings: NeuroKit2's `nk.hrv_rsa` (Makowski et al. 2021) on the R-peaks and the breaths:
-  p2t            peak-to-trough: per breath, the longest RR interval of expiration minus the shortest
-                 of inspiration (0 when negative), averaged over breaths, ms (Grossman's method as
-                 described by Lewis et al. 2012; NeuroKit2 adds 750 ms to the phase ends for the
-                 vagal delay);
-  porges-bohrer  the Porges-Bohrer estimate: heart period at 2 Hz, detrended with a 21-point cubic
-                 polynomial, band-passed to 0.12-0.40 Hz (human breathing), log of its variance per
-                 30 s epoch, averaged, ln(ms^2) (Lewis et al. 2012).
+The two estimates of NeuroKit2's `nk.hrv_rsa` (Makowski et al. 2021), computed with NeuroKit2's rules
+at the **exact R-peak times** instead of on NeuroKit2's sample grid. hrv_rsa needs R-peaks and breaths
+as sample indices of one signal; at the respiration's working rate (50-100 Hz) rounding the R-peaks
+moves each RR interval by up to 10-20 ms, which inflates peak-to-trough RSA (in a rat with no RSA
+at all, by about 5 ms at 100 Hz). tests/test_processor.py checks that these functions give
+NeuroKit2's values when NeuroKit2 is run on a 1 kHz grid.
 
-Other species: Porges-Bohrer's filter is defined for human breathing frequencies, so it is not
-reported; peak-to-trough is computed with the same rule (this module, `p2t`) but with the vagal
-delay scaled to the breath (the smaller of 750 ms and a quarter of the median breath), because
-750 ms is longer than a whole breath of a rat or mouse.
+  p2t            peak-to-trough: per breath (inspiration onset to the next), the longest RR interval
+                 of expiration minus the shortest of inspiration (0 when negative), averaged, ms.
+                 As NeuroKit2 does, the R-peaks of each phase run up to a vagal delay after its end
+                 (NeuroKit2 cites Grossman et al. 1990 for 750 ms); for non-human species the delay is
+                 the smaller of 750 ms and a quarter of the median breath, because 750 ms is longer
+                 than a whole rat or mouse breath.
+  porges-bohrer  heart period (ms) at 2 Hz (monotone cubic interpolation, as NeuroKit2's signal_rate),
+                 detrended with a 21-point cubic Savitzky-Golay filter, band-passed to 0.12-0.40 Hz
+                 (NeuroKit2's filters), log of its variance per 30 s epoch, averaged; ln(ms^2) (Lewis et
+                 al. 2012). Human breathing frequencies only: not computed for other species.
 
 RSA is computed over the stretches of recording that are free of stimulation and gaps.
 """
 from __future__ import annotations
 
-import warnings
-
 import numpy as np
 
 from processor.resp import RespSegment
-
-
-def p2t(rsp_onsets: np.ndarray, rsp_peaks: np.ndarray, rpeaks: np.ndarray, fs: float, offset_s: float) -> np.ndarray:
-    """Per-breath peak-to-trough RSA (ms), NeuroKit2's rule with a configurable phase offset."""
-    off = offset_s * fs
-    vals = np.full(max(0, rsp_onsets.size - 1), np.nan)
-    for i in range(rsp_onsets.size - 1):
-        a, b = rsp_onsets[i], rsp_onsets[i + 1]
-        pk = rsp_peaks[(rsp_peaks > a) & (rsp_peaks < b)]
-        if pk.size == 0:
-            continue
-        p = pk[0]
-        inh = rpeaks[(rpeaks >= a) & (rpeaks < p + off)]
-        exh = rpeaks[(rpeaks >= p) & (rpeaks < b + off)]
-        ri, re_ = np.diff(inh) / fs * 1000.0, np.diff(exh) / fs * 1000.0
-        if ri.size and re_.size:
-            vals[i] = max(0.0, float(np.max(re_) - np.min(ri)))
-    return vals
 
 
 def fill_beats(times: np.ndarray, good: np.ndarray) -> np.ndarray:
@@ -60,43 +44,69 @@ def fill_beats(times: np.ndarray, good: np.ndarray) -> np.ndarray:
     return np.asarray(out)
 
 
+def p2t(onsets_t: np.ndarray, peaks_t: np.ndarray, r_t: np.ndarray, offset_s: float) -> np.ndarray:
+    """Per-breath peak-to-trough RSA (ms) at exact times: NeuroKit2's rule (_hrv_rsa_p2t)."""
+    vals = np.full(max(0, onsets_t.size - 1), np.nan)
+    for i in range(onsets_t.size - 1):
+        a, b = onsets_t[i], onsets_t[i + 1]
+        pk = peaks_t[(peaks_t > a) & (peaks_t < b)]
+        if pk.size == 0:
+            continue
+        p = pk[0]
+        inh = r_t[(r_t >= a) & (r_t < p + offset_s)]
+        exh = r_t[(r_t >= p) & (r_t < b + offset_s)]
+        ri, re_ = np.diff(inh) * 1000.0, np.diff(exh) * 1000.0
+        if ri.size and re_.size:
+            vals[i] = max(0.0, float(np.max(re_) - np.min(ri)))
+    return vals
+
+
+def porges_bohrer(r_t: np.ndarray, t0: float, t1: float) -> float:
+    """NeuroKit2's Porges-Bohrer estimate (_hrv_rsa_pb) on exact R-peak times, ln(ms^2)."""
+    import neurokit2 as nk  # noqa: PLC0415
+    from scipy.interpolate import PchipInterpolator  # noqa: PLC0415
+
+    r = r_t[(r_t >= t0) & (r_t <= t1)]
+    if r.size < 10:
+        return float("nan")
+    period = np.diff(r) * 1000.0
+    period = np.concatenate([[np.mean(period)], period])     # as signal_period: the first gets the mean
+    grid = np.arange(t0, t1, 0.5)
+    hp = PchipInterpolator(r, period, extrapolate=False)(grid)
+    hp[grid < r[0]] = period[0]
+    hp[grid > r[-1]] = period[-1]
+    if grid.size < 30:
+        return float("nan")
+    trend = nk.signal_filter(hp, sampling_rate=2, lowcut=0.095, highcut=None, method="savgol", order=3,
+                             window_size=21)
+    zm = nk.signal_filter(hp - trend, sampling_rate=2, lowcut=0.12, highcut=0.40)
+    epoch = (np.arange(zm.size) / 2.0 // 30).astype(int)
+    v = []
+    for e in np.unique(epoch):
+        x = zm[epoch == e]
+        if x.size > 1:
+            v.append(np.log(np.var(x, ddof=1)))
+    v = [x for x in v if np.isfinite(x)]
+    return float(np.mean(v)) if v else float("nan")
+
+
 def stretch_rsa(seg: RespSegment, a: int, b: int, r_times: np.ndarray, human: bool, offset_s: float) -> dict | None:
     """RSA over samples a..b of one respiration segment. Returns {'p2t': (mean, n_breaths),
     'porges-bohrer': value or None, 'why_pb': reason}."""
-    import neurokit2 as nk  # noqa: PLC0415
-    import pandas as pd  # noqa: PLC0415
-
     fs = seg.fs
-    rp = np.round((r_times - seg.t0) * fs).astype(np.int64)
-    rp = rp[(rp >= a) & (rp < b)] - a
-    tr = seg.troughs[(seg.troughs >= a) & (seg.troughs < b)] - a
-    pk = seg.peaks[(seg.peaks >= a) & (seg.peaks < b)] - a
-    n = b - a
-    if rp.size < 10 or tr.size < 4:
+    t0, t1 = seg.t0 + a / fs, seg.t0 + (b - 1) / fs
+    tr = seg.troughs[(seg.troughs >= a) & (seg.troughs < b)]
+    pk = seg.peaks[(seg.peaks >= a) & (seg.peaks < b)]
+    r = r_times[(r_times >= t0) & (r_times <= t1)]
+    if r.size < 10 or tr.size < 4:
         return None
-    out: dict = {}
+    vals = p2t(seg.t0 + tr / fs, seg.t0 + pk / fs, r, offset_s if not human else 0.75)
+    ok = np.isfinite(vals)
+    out = {"p2t": (float(np.mean(vals[ok])) if ok.any() else np.nan, int(ok.sum()))}
     if human:
-        ecg = pd.DataFrame({"ECG_R_Peaks": np.zeros(n, np.int8)})
-        ecg.loc[rp, "ECG_R_Peaks"] = 1
-        rsp = pd.DataFrame({"RSP_Clean": seg.clean[a:b]})
-        phase = nk.rsp_phase(pk, tr, desired_length=n)
-        rsp = pd.concat([rsp, phase], axis=1)
-        rsp["RSP_Peaks"] = 0
-        rsp["RSP_Troughs"] = 0
-        rsp.loc[pk, "RSP_Peaks"] = 1
-        rsp.loc[tr, "RSP_Troughs"] = 1
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            res = nk.hrv_rsa(ecg, rsp, sampling_rate=fs, continuous=False)
-        if not res:
-            return None
-        vals = p2t(tr, pk, rp, fs, 0.75)
-        out["p2t"] = (float(res.get("RSA_P2T_Mean", np.nan)), int(np.isfinite(vals).sum()))
-        out["porges-bohrer"] = float(res.get("RSA_PorgesBohrer", np.nan))
+        out["porges-bohrer"] = porges_bohrer(r, t0, t1)
         out["why_pb"] = ""
     else:
-        vals = p2t(tr, pk, rp, fs, offset_s)
-        out["p2t"] = (float(np.nanmean(vals)) if np.isfinite(vals).any() else np.nan, int(np.isfinite(vals).sum()))
         out["porges-bohrer"] = None
         out["why_pb"] = "Porges-Bohrer's 0.12-0.40 Hz filter is defined for human breathing; not computed"
     return out

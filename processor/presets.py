@@ -111,7 +111,7 @@ _RANGES = "plausible SBP/DBP/PP and breathing-rate ranges: PENN"
 _COMMON = "series_hz per conventions.md; max_gap_s, after_s, spectral window: PENN"
 
 SEQ_SOURCE = {
-    "human": "BAG (Bertinieri's 1 mmHg / 4 ms); lags 0-2 beats per the brief",
+    "human": "BAG only (a review attributing 1 mmHg / 4 ms to Bertinieri et al. 1988); lags 0-2 beats per the brief",
     "pig": "PENN (human thresholds: pig heart rates and pressures are close to human)",
     "dog": "PENN (human thresholds)",
     "rabbit": "PENN (0.5 mmHg / 2 ms, between human and rodent practice)",

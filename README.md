@@ -12,11 +12,12 @@ peak-to-trough and Porges-Bohrer estimates (as compared by Gregory F. Lewis, Sen
 Martha F. McCool and Stephen W. Porges, [Biological Psychology 2012](https://doi.org/10.1016/j.biopsycho.2011.11.009)).
 Pressure pulses are found with the slope sum function of W. Zong, T. Heldt, G. B. Moody and
 R. G. Mark ([Computers in Cardiology 2003](https://doi.org/10.1109/CIC.2003.1291140)), the method
-behind PhysioNet's `wabp`. The baroreflex follows the sequence method of G. Bertinieri, M. Di Rienzo,
-G. Mancia and colleagues ([Am J Physiol 1988](https://doi.org/10.1152/ajpheart.1988.254.2.H377)) and
-G. Parati and colleagues ([Hypertension 1988](https://doi.org/10.1161/01.HYP.12.2.214)), and the
-spectral alpha index and transfer-function gain as compared in the EuroBaVar study by Dominique Laude
-and colleagues ([Am J Physiol Regul Integr Comp Physiol 2004](https://doi.org/10.1152/ajpregu.00709.2002)).
+behind PhysioNet's `wabp`. The baroreflex follows the sequence method introduced by G. Bertinieri, M. Di Rienzo, G. Mancia and
+colleagues (J Hypertens Suppl 1985, [PubMed 2856787](https://pubmed.ncbi.nlm.nih.gov/2856787/); validated
+in cats in [Am J Physiol 1988](https://doi.org/10.1152/ajpheart.1988.254.2.H377)) and applied in humans
+by G. Parati and colleagues ([Hypertension 1988](https://doi.org/10.1161/01.HYP.12.2.214)), and the
+spectral alpha index and transfer-function gain, two of the techniques compared in the EuroBaVar study
+by Dominique Laude and colleagues ([Am J Physiol Regul Integr Comp Physiol 2004](https://doi.org/10.1152/ajpregu.00709.2002)).
 **Pennsieve packages these methods and did not develop them**: NeuroKit2 is used as published; the
 pulse detector and the baroreflex have no maintained, openly licensed implementation, so they are
 written here from the papers (Apache-2.0) and credited to their authors. The app reads the NWB files
@@ -98,18 +99,27 @@ RR (lag 0) are interpolated onto a 4 Hz grid (rodents 10–20 Hz); Welch average
 stimulation; at least 3 windows are needed (coherence from one window is meaningless).
 `alpha-lf`/`alpha-hf` = √(P_RR / P_SBP) over the band, valid when the mean squared coherence over the
 band is ≥ `COHERENCE_MIN` (0.5); `transfer-lf` = mean |P_SBP,RR| / P_SBP over the LF frequencies whose
-coherence is ≥ 0.5. Bands are the species' HRV bands, the same as ecg-hrv's.
+coherence is ≥ 0.5. The 0.5 coherence threshold is the usual convention of spectral BRS studies; it
+is not taken from a source verified for this app (the EuroBaVar abstract does not state it). Bands are
+the species' HRV bands, the same as ecg-hrv's.
 
 **Respiratory sinus arrhythmia** (respiration and R-peaks). Ectopic or artefact beats are replaced by
-evenly spaced beats between their good neighbours (as HRV software interpolates them). Humans:
-NeuroKit2 `hrv_rsa` — `p2t` (peak-to-trough: per breath, the longest expiratory RR minus the shortest
-inspiratory RR, negative values set to 0, averaged; ms) and `porges-bohrer` (heart period at 2 Hz,
-21-point cubic detrend, 0.12–0.40 Hz band, log variance per 30 s epoch, averaged; ln(ms²)). Other
-species: Porges-Bohrer is not reported (its filter is defined for human breathing); `p2t` uses the
-same rule (this app's code, tested to equal NeuroKit2's value at the same settings) with the vagal
-delay NeuroKit2 adds to the phase ends (750 ms) shortened to a quarter of the median breath when
-that is shorter, because 750 ms is longer than a whole rat breath. RSA is computed over stretches of
-≥ 60 s (or 10 breaths) free of stimulation and gaps, weighted by breaths.
+evenly spaced beats between their good neighbours (as HRV software interpolates them). The two
+estimates of NeuroKit2's `hrv_rsa`, computed with NeuroKit2's rules at the **exact R-peak times**:
+`hrv_rsa` takes R-peaks as sample indices of the respiration signal, and rounding them to the
+respiration's 50–100 Hz working rate moves each RR interval by up to 10–20 ms (on Fantasia it raised
+P2T by 2–9 %; in a simulated rat with no RSA it gave 5.5 ms instead of about 1 ms). A test checks that
+the exact-time code gives NeuroKit2's values when NeuroKit2 runs on a 1 kHz grid. `p2t` (peak-to-trough:
+per breath, the longest expiratory RR minus the shortest inspiratory RR, negative values set to 0,
+averaged; ms; Grossman's peak-to-valley method as compared by Lewis et al. 2012) and `porges-bohrer`
+(heart period at 2 Hz, 21-point cubic detrend, 0.12–0.40 Hz band, log variance per 30 s epoch,
+averaged; ln(ms²); Lewis et al. 2012). Each phase's R-peaks run up to a vagal delay after the phase
+ends: NeuroKit2's 750 ms, which its code attributes to Grossman et al. 1990
+([Psychophysiology](https://doi.org/10.1111/j.1469-8986.1990.tb03198.x)); for other species the
+delay is shortened to a quarter of the median breath when that is shorter, because 750 ms is longer
+than a whole rat breath, and Porges-Bohrer is not reported (its filter is defined for human
+breathing). RSA is computed over stretches of ≥ 60 s (or 10 breaths) free of stimulation and gaps,
+weighted by breaths.
 
 ## Parameters
 
@@ -162,9 +172,10 @@ species (a Pennsieve choice). Heart-rate and RR ranges and LF/HF bands are ecg-h
 PhysioZoo (Behar et al. 2018, Tables 2 and 3; numbers only, its code is GPL), Task Force 1996 (human
 bands), Behar et al. 2018b (mouse bands, via PhysioZoo; HF upper edge 5 Hz after Thireau et al. 2008), Carnevali et al. 2023 (rat bands), Poletto
 et al. 2011 and Salomão et al. 2015 (pig bands); rat and pig detector ranges are Pennsieve choices.
-Human sequence thresholds: 1 mmHg and 4 ms as Bertinieri et al. 1988 set them, quoted from the review
-by Bagnall-Hare et al. 2024 ("a minimum changes of at least ≥ 1 mmHg in blood pressure, ≥ 4 ms in
-RR-interval, and a delay of one beat is assumed"; the 1988 full texts could not be read). Rat: 1 mmHg and 5 ms
+Human sequence thresholds: 1 mmHg and 4 ms. Their only verified source for this app is the review by
+Bagnall-Hare et al. 2024, which attributes them to Bertinieri et al. 1988 ("a minimum changes of at
+least ≥ 1 mmHg in blood pressure, ≥ 4 ms in RR-interval, and a delay of one beat is assumed"); the
+1985 and 1988 papers themselves could not be read (no open full text). Rat: 1 mmHg and 5 ms
 as used by Molcan et al. 2026. Mouse: 0.5 mmHg and 5 ms as Pan et al. 2023 used (with a fixed 3-beat delay), and lags 0-3 tried
 following Laude et al. 2009 ("A delay of 0 or 3 beats between BP and PI should be applied").
 Pig, dog: human thresholds; rabbit 0.5 mmHg / 2 ms (Pennsieve choices: no published preset found).
@@ -204,10 +215,20 @@ M-series Mac, peak memory from the container's cgroup `memory.peak`:
 | Autonomic Aging (3 × 15–32 min, 1000 Hz; ECG, NIBP) | 3 analysed | 2.9 s | 242 MB |
 | Discover 349 / 655 / 406 (no pressure or respiration) | 1 / 3 / 20 skipped | < 0.1 s | 111–113 MB |
 
-Image: 159 MB (`docker image inspect`). One recording at a time; channels are read a million samples
-at a time and decimated to the preset's working rate (pressure 250 Hz for humans and large animals,
-500–1000 Hz for small ones; respiration 50–100 Hz), so a long, fast-sampled recording costs about
-8 bytes per working-rate sample.
+Image: 159 MB (`docker image inspect`). One recording at a time. Pressure and ECG are read, decimated
+and analysed 10 minutes (plus 10 s on each side) at a time, so their memory does not grow with the
+recording's length; only the beat and breath lists and the respiration at its working rate (50–100
+Hz) are kept for the whole recording. Every table is written while it is produced, never collected for
+the run. Long recordings, measured the same way on a synthetic rat (`validation/make_long_recording.py`:
+ECG, arterial pressure and respiration at 1 kHz):
+
+| Synthetic rat | Beats / breaths | Wall time | Peak memory |
+|---|---|---|---|
+| 6 h, 3 channels at 1 kHz (65 million samples) | 127,008 / 32,397 | 45 s | 586 MB |
+
+(Before this design a 6 h rat was killed at 2048 MiB.) Lambda's 15-minute limit allows a few days of
+rodent recording at this rate; the 10 GB `/tmp` limit (inputs + outputs) comes first for very long
+1 kHz recordings.
 
 ## Validation
 
@@ -311,6 +332,9 @@ Methods and software this app is built on:
   Mancia G (1988). Evaluation of the baroreceptor-heart rate reflex by 24-hour intra-arterial blood
   pressure monitoring in humans. *Hypertension* 12:214–222.
   [doi:10.1161/01.HYP.12.2.214](https://doi.org/10.1161/01.HYP.12.2.214), PMID 3410530.
+- Bertinieri G, di Rienzo M, Cavallazzi A, Ferrari AU, Pedotti A, Mancia G (1985). A new approach to
+  analysis of the arterial baroreflex. *Journal of Hypertension. Supplement* 3:S79–S81. No DOI;
+  [PubMed 2856787](https://pubmed.ncbi.nlm.nih.gov/2856787/).
 - Bertinieri G, Di Rienzo M, Cavallazzi A, Ferrari AU, Pedotti A, Mancia G (1988). Evaluation of
   baroreceptor reflex by blood pressure monitoring in unanesthetized cats. *American Journal of
   Physiology-Heart and Circulatory Physiology* 254:H377–H383.
@@ -336,6 +360,7 @@ Pan et al. 2023 [doi:10.3389/fphys.2023.1185744](https://doi.org/10.3389/fphys.2
 Molcan et al. 2026 [doi:10.1038/s41440-026-02579-8](https://doi.org/10.1038/s41440-026-02579-8);
 Kardos et al. 2001 [doi:10.1161/01.HYP.37.3.911](https://doi.org/10.1161/01.HYP.37.3.911);
 Grossman & Taylor 2007 [doi:10.1016/j.biopsycho.2005.11.014](https://doi.org/10.1016/j.biopsycho.2005.11.014);
+Grossman, van Beek & Wientjes 1990 (the 750 ms delay in NeuroKit2's P2T) [doi:10.1111/j.1469-8986.1990.tb03198.x](https://doi.org/10.1111/j.1469-8986.1990.tb03198.x);
 Behar et al. 2018 (PhysioZoo) [doi:10.3389/fphys.2018.01390](https://doi.org/10.3389/fphys.2018.01390);
 Behar et al. 2018b (mammalian HRV bands) [doi:10.3389/fphys.2018.01001](https://doi.org/10.3389/fphys.2018.01001);
 Task Force of the European Society of Cardiology and the North American Society of Pacing and

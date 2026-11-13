@@ -246,3 +246,94 @@ def beats(segments: list[Segment], s: BpSettings, calibrated: bool, flat_s: floa
     return BpBeats(a["onset_t"].astype(float), a["sys_t"].astype(float), a["sbp"].astype(float),
                    a["dbp"].astype(float), a["map"].astype(float), a["pp"].astype(float), ibi.astype(float),
                    label, why, a["seg"].astype(int))
+
+
+def _concat(parts: list[BpBeats]) -> BpBeats:
+    if not parts:
+        return BpBeats(*(np.zeros(0) for _ in range(7)), np.zeros(0, dtype="<U8"), np.zeros(0, dtype="<U64"),
+                       np.zeros(0, int))
+    f = BpBeats.__dataclass_fields__
+    return BpBeats(**{k: np.concatenate([getattr(p, k) for p in parts]) for k in f})
+
+
+def beats_windowed(windows, s: BpSettings, calibrated: bool, zoom_t: float | None = None,
+                   zoom_span: float = 0.0) -> tuple[BpBeats, list, list]:
+    """beats() over iter_windows(): each window is measured and labelled with its padding (so the
+    neighbour rules see neighbours across window edges) and only the beats whose pulse onset lies in
+    the window's core are kept. Returns the beats, the signal spans [(t0, t1)] covered, and the
+    samples of [zoom_t, zoom_t + zoom_span] (Segments) for the figure."""
+    parts, spans, zoom = [], [], []
+    k = 0
+    for segs, (c0, c1) in windows:
+        if not segs:
+            continue
+        bt = beats(segs, s, calibrated)
+        if bt.n:
+            keep = (bt.onset_t >= c0) & (bt.onset_t < c1)
+            bt = BpBeats(**{f: getattr(bt, f)[keep] for f in BpBeats.__dataclass_fields__})
+            bt.seg = bt.seg + k
+            parts.append(bt)
+        k += len(segs)
+        for sg in segs:
+            a, b = max(sg.t0, c0), min(sg.t1, c1)
+            if b > a:
+                spans.append((a, b))
+            if zoom_t is not None and sg.t0 <= zoom_t + zoom_span and sg.t1 >= zoom_t:
+                tt = sg.times()
+                m = (tt >= zoom_t) & (tt <= zoom_t + zoom_span)
+                if m.any():
+                    from processor.inputs import Segment  # noqa: PLC0415
+                    zoom.append(Segment(float(tt[m][0]), sg.fs, sg.x[m].copy()))
+    # neighbouring spans of one continuous segment: merge
+    merged = []
+    for a, b in sorted(spans):
+        if merged and a - merged[-1][1] < 0.05:
+            merged[-1] = (merged[-1][0], max(merged[-1][1], b))
+        else:
+            merged.append((a, b))
+    bt = _concat(parts)
+    # beats whose window edge cut the beat-to-beat chain: same segment id across windows of one span
+    if bt.n:
+        span_id = np.searchsorted([a for a, _ in merged], bt.onset_t, side="right") - 1
+        bt.seg = span_id.astype(int)
+    return bt, merged, zoom
+
+
+def level_steps(bt: BpBeats, step_mmhg: float = 8.0, n: int = 10) -> list[tuple[float, float]]:
+    """Abrupt level changes of the systolic pressure (a finger-cuff or vascular-unloading device
+    re-calibrating, a transducer re-zeroed or moved): times where the median SBP of the next n good
+    beats differs from that of the previous n by more than step_mmhg, the change happening within 3
+    beats. Returns [(time_s, change_mmhg)], one per step."""
+    g = np.flatnonzero(bt.good)
+    if g.size < 2 * n + 1:
+        return []
+    m = bt.sbp[g]
+    t = bt.sys_t[g]
+    out = []
+    i = n
+    while i < g.size - n:
+        before = np.median(m[i - n:i])
+        after = np.median(m[i:i + n])
+        if abs(after - before) > step_mmhg:
+            # abrupt: the change happens across at most 3 beats around i
+            near_b = np.median(m[max(0, i - 3):i])
+            near_a = np.median(m[i:i + 3])
+            if abs(near_a - near_b) > 0.6 * step_mmhg:
+                out.append((float(t[i]), float(after - before)))
+                i += n
+                continue
+        i += 1
+    return out
+
+
+def drift(bt: BpBeats, minutes: float = 2.0) -> float | None:
+    """Median SBP of the last `minutes` minus that of the first (mmHg), or None when too short."""
+    g = bt.good
+    if g.sum() < 20:
+        return None
+    t, v = bt.sys_t[g], bt.sbp[g]
+    if t[-1] - t[0] < 4 * 60 * minutes:
+        return None
+    a = np.median(v[t <= t[0] + 60 * minutes])
+    b = np.median(v[t >= t[-1] - 60 * minutes])
+    return float(b - a)

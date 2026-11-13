@@ -195,23 +195,88 @@ def test_no_input(tmp_path, monkeypatch):
     assert run(monkeypatch, tmp_path / "in", tmp_path / "out") == 1
 
 
-def test_inhouse_p2t_matches_neurokit(fixture):
-    """The in-house peak-to-trough (used for non-human species) is NeuroKit2's rule: with NeuroKit2's
-    750 ms delay it gives NeuroKit2's value."""
+def _breathing(fs, dur, f_resp):
     import neurokit2 as nk
 
-    fs = 50.0
-    n = int(120 * fs)
-    t = np.arange(n) / fs
-    rsp = np.sin(2 * np.pi * 0.2 * t - np.pi / 2)
-    clean = nk.rsp_clean(rsp, sampling_rate=fs)
+    t = np.arange(int(dur * fs)) / fs
+    clean = np.asarray(nk.rsp_clean(np.sin(2 * np.pi * f_resp * t - np.pi / 2), sampling_rate=fs))
     _, info = nk.rsp_peaks(clean, sampling_rate=fs)
-    rp, tb = [], 0.5
-    while tb < 119:
-        rp.append(int(round(tb * fs)))
-        tb += 0.9 - 0.03 * np.sin(2 * np.pi * 0.2 * tb)
-    rp = np.asarray(rp)
-    seg = RA.RespSegment(0.0, fs, np.asarray(clean), np.asarray(info["RSP_Peaks"]), np.asarray(info["RSP_Troughs"]))
-    ours = RA.stretch_rsa(seg, 0, n, rp / fs, False, 0.75)["p2t"][0]
-    theirs = RA.stretch_rsa(seg, 0, n, rp / fs, True, 0.75)["p2t"][0]
-    assert abs(ours - theirs) < 1e-6
+    return RA.RespSegment(0.0, fs, clean, np.asarray(info["RSP_Peaks"]), np.asarray(info["RSP_Troughs"]))
+
+
+def test_rsa_matches_neurokit_on_a_fine_grid():
+    """RSA here is NeuroKit2's hrv_rsa rule at exact R-peak times: on a 1 kHz grid (where NeuroKit2's
+    rounding is negligible) NeuroKit2 gives the same peak-to-trough and Porges-Bohrer values."""
+    import neurokit2 as nk
+    import pandas as pd
+
+    fs, dur = 1000.0, 300.0
+    seg = _breathing(fs, dur, 0.25)
+    r, tb = [], 0.5
+    while tb < dur - 1:
+        r.append(tb)
+        tb += 0.85 - 0.04 * np.sin(2 * np.pi * 0.25 * tb) + 0.01 * np.sin(2 * np.pi * 0.07 * tb)
+    r = np.asarray(r)
+    n = seg.clean.size
+    ecg = pd.DataFrame({"ECG_R_Peaks": np.zeros(n, np.int8)})
+    ecg.loc[np.round(r * fs).astype(int), "ECG_R_Peaks"] = 1
+    rsp = pd.concat([pd.DataFrame({"RSP_Clean": seg.clean}), nk.rsp_phase(seg.peaks, seg.troughs, desired_length=n)],
+                    axis=1)
+    rsp["RSP_Peaks"] = 0
+    rsp["RSP_Troughs"] = 0
+    rsp.loc[seg.peaks, "RSP_Peaks"] = 1
+    rsp.loc[seg.troughs, "RSP_Troughs"] = 1
+    theirs = nk.hrv_rsa(ecg, rsp, sampling_rate=fs, continuous=False)
+    ours = RA.stretch_rsa(seg, 0, n, r, True, 0.75)
+    assert abs(ours["p2t"][0] - theirs["RSA_P2T_Mean"]) < 0.5
+    assert abs(ours["porges-bohrer"] - theirs["RSA_PorgesBohrer"]) < 0.1
+
+
+def test_zero_rsa_rat_gives_zero_p2t():
+    """A rat whose heart period does not change with breathing has no RSA: peak-to-trough must stay near
+    0 ms (rounding R-peaks to a 100 Hz respiration grid gave about 5 ms)."""
+    rng = np.random.default_rng(1)
+    seg = _breathing(100.0, 120.0, 1.5)
+    r = 0.3 + np.cumsum(np.full(700, 0.171) + 0.0002 * rng.standard_normal(700))
+    v = RA.stretch_rsa(seg, 0, seg.clean.size, r, False, min(0.75, 0.25 / 1.5))["p2t"][0]
+    assert v < 1.0
+
+
+def test_level_steps_flagged():
+    from processor import bp as B
+
+    n = 400
+    t = np.arange(n) * 0.8
+    sbp = np.where(t < 160, 120.0, 140.0) + 0.5 * np.sin(t)
+    bt = B.BpBeats(t - 0.2, t, sbp, sbp - 40, sbp - 25, np.full(n, 40.0), np.full(n, 0.8), np.full(n, "N"),
+                   np.full(n, ""), np.zeros(n, int))
+    steps = B.level_steps(bt)
+    assert len(steps) == 1 and abs(steps[0][0] - 160) < 3 and abs(steps[0][1] - 20) < 2
+
+
+def test_raw_channel_preferred_over_derived():
+    from processor import inputs as I
+
+    raw = I.ChannelInfo("bp", "bp", "mmHg", True, "noisy", "", "ABP", "name", "")
+    der = I.ChannelInfo("bp-2", "bp", "mmHg", True, "good", "", "ABP filtered", "name", "bp")
+    rec = I.Recording("r", Path("x.nwb"), channels=[der, raw])
+    ch, note = I.pick_channel(rec, "bp")
+    assert ch.name == "bp" and "processed copy" in note
+    rec = I.Recording("r", Path("x.nwb"), channels=[der])
+    ch, note = I.pick_channel(rec, "bp")
+    assert ch.name == "bp-2" and "only a processed copy" in note
+
+
+def test_no_notice_without_uncalibrated(fixture, tmp_path, monkeypatch):
+    sub = tmp_path / "in"
+    (sub / "physio").mkdir(parents=True)
+    import shutil
+    rows_ = rows(fixture / "physio" / "recordings.csv")
+    keep = [r for r in rows_ if r["recording_id"] == "sub-H02_rec-nobp"]
+    with open(sub / "physio" / "recordings.csv", "w", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=list(keep[0]))
+        w.writeheader()
+        w.writerows(keep)
+    shutil.copytree(fixture / "physio" / "sub-H02", sub / "physio" / "sub-H02")
+    assert run(monkeypatch, sub, tmp_path / "out", FIGURES="false") == 0
+    assert "notice" not in json.loads((tmp_path / "out" / "bp-resp" / "summary.json").read_text())
