@@ -273,7 +273,7 @@ pressures are doubtful and its spectral coherence is low; subject 0002 has two f
 **Synthetic recordings with planted values** (`tests/`): baroreflex gains of 12 ms/mmHg (human) and
 3 ms/mmHg (rat) are recovered by every method within 2 % (sequence), 1 % (alpha) and 10–15 %
 (transfer-LF); SBP and DBP means within 0.1 mmHg; breathing rates of 12, 15 and 90 /min exactly; a
-planted ±30 ms respiratory swing gives a peak-to-trough RSA of 61 ms.
+planted ±30 ms respiratory swing gives a peak-to-trough RSA of 57 ms.
 
 **RSA (Fantasia), with ecg-hrv's R-peaks** (and with R-peaks detected inside bp-resp, no hrv port):
 p2t 114.4 (102.7) ms in f1y01 (23 y), 59.2 (60.8) f2y01 (23 y), 79.9 (77.1) f2y02 (23 y), 24.9 (23.9)
