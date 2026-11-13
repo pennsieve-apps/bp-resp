@@ -211,9 +211,9 @@ M-series Mac, peak memory from the container's cgroup `memory.peak`:
 
 | Demo | Recordings | Wall time | Peak memory |
 |---|---|---|---|
-| Fantasia (6 × ~2 h, 250 Hz; ECG, respiration, BP in 4) | 6 analysed | 9.2 s | 510 MB |
-| Autonomic Aging (3 × 15–32 min, 1000 Hz; ECG, NIBP) | 3 analysed | 2.9 s | 242 MB |
-| Discover 349 / 655 / 406 (no pressure or respiration) | 1 / 3 / 20 skipped | < 0.1 s | 111–113 MB |
+| Fantasia (6 × ~2 h, 250 Hz; ECG, respiration, BP in 4) | 6 analysed | 8.1 s | 357 MB |
+| Autonomic Aging (3 × 15–32 min, 1000 Hz; ECG, NIBP) | 3 analysed | 2.9 s | 210 MB |
+| Discover 349 / 655 / 406 (no pressure or respiration) | 1 / 3 / 20 skipped | < 0.1 s | 110–112 MB |
 
 Image: 159 MB (`docker image inspect`). One recording at a time. Pressure and ECG are read, decimated
 and analysed 10 minutes (plus 10 s on each side) at a time, so their memory does not grow with the
@@ -254,9 +254,9 @@ up, 6.4 ± 1.5 down ms/mmHg):
 
 | Record (age group, sex) | sequence all (n) | alpha-LF (coh.) | alpha-HF (coh.) | transfer-LF (n bins) | Kardos 2001 expected |
 |---|---|---|---|---|---|
-| 0001 (20–24 y, F) | 34.5 (12, lag 2) | 24.3 (0.43, invalid) | 35.4 (0.13, invalid) | 27.2 (6) | 13.2 |
-| 0002 (20–24 y, F) | 35.3 (56, lag 0) | 24.7 (0.56) | 57.0 (0.50) | 34.5 (7) | 13.2 |
-| 0003 (45–49 y, F) | 5.5 (1: invalid) | 5.1 (0.45, invalid) | 9.8 (0.55) | 4.1 (7) | 6.2 |
+| 0001 (20–24 y, F) | 32.9 (13, lag 2) | 24.2 (0.43, invalid) | 35.4 (0.13, invalid) | 27.1 (6) | 13.2 |
+| 0002 (20–24 y, F) | 34.9 (58, lag 0) | 24.7 (0.56) | 56.9 (0.50) | 34.5 (7) | 13.2 |
+| 0003 (45–49 y, F) | 5.4 (2: invalid) | 5.1 (0.45, invalid) | 9.7 (0.55) | 4.1 (7) | 6.2 |
 
 The 45–49-year-old's BRS is a fifth of the two 20–24-year-olds', as the age dependence predicts, and
 sequence and spectral estimates agree within each subject. The two young women are well above the
@@ -264,9 +264,10 @@ regression line (r² = 0.23 in Kardos et al., so individuals scatter widely arou
 spline-resampled to 1000 Hz (Schumann & Bär 2022) and very smooth beat to beat: subject 0003's SBP
 changes by a median of 0.4 mmHg per beat, so the 1 mmHg / 4 ms thresholds find only one sequence.
 With `SEQ_SBP_MMHG=0.5 SEQ_RR_MS=2` (Laude et al. 2009 found "No thresholds in BP or PI were
-necessary" in mice) the sequence BRS is 49.5 (47 sequences), 40.0 (147) and 7.4 (26) ms/mmHg.
-Subject 0001's pressure has level steps of 20–30 mmHg (device re-calibrations), which is why its
-coherence is low. Subject 0002's two calibration square waves (25 ↔ 175 mmHg) are labelled artifact
+necessary", a finding in mice) the sequence BRS is 49.5 (47 sequences), 40.1 (146) and 7.1 (27)
+ms/mmHg. Subject 0001's systolic pressure drifts up by 34 mmHg over 15 min with steps (`qc.csv`
+`bp_drift` and `bp_level_steps`; device re-calibration is the likely cause), so its absolute
+pressures are doubtful and its spectral coherence is low; subject 0002 has two flagged steps. Subject 0002's two calibration square waves (25 ↔ 175 mmHg) are labelled artifact
 (43 beats, `flat or clipped waveform`).
 
 **Synthetic recordings with planted values** (`tests/`): baroreflex gains of 12 ms/mmHg (human) and
@@ -275,10 +276,11 @@ coherence is low. Subject 0002's two calibration square waves (25 ↔ 175 mmHg) 
 planted ±30 ms respiratory swing gives a peak-to-trough RSA of 61 ms.
 
 **RSA (Fantasia), with ecg-hrv's R-peaks** (and with R-peaks detected inside bp-resp, no hrv port):
-p2t 114.6 (103.8) ms in f1y01 (23 y), 60.6 (62.4) f2y01 (23 y), 79.9 (77.4) f2y02 (23 y), 27.4 (26.2)
-f1o01 (77 y), 50.6 (49.9) f2o01 (73 y), 36.8 (36.6) f2o02 (75 y); Porges-Bohrer 7.69, 6.19, 7.49 vs
-4.79, 6.17, 5.20 ln(ms²): higher in the young than the elderly, and the two R-peak sources agree
-within 10 %. Breathing rates 12.6–20.6 /min (median per record).
+p2t 114.4 (102.7) ms in f1y01 (23 y), 59.2 (60.8) f2y01 (23 y), 79.9 (77.1) f2y02 (23 y), 24.9 (23.9)
+f1o01 (77 y), 48.7 (47.8) f2o01 (73 y), 35.8 (35.5) f2o02 (75 y); Porges-Bohrer 7.69, 6.14, 7.49 vs
+4.51, 6.15, 5.07 ln(ms²): higher in the young than the elderly, and the two R-peak sources agree
+within 11 %. Computed at exact R-peak times; the first version rounded R-peaks to the 50 Hz
+respiration grid and reported 2–9 % higher P2T (f1o01 27.4 ms). Breathing rates 12.6–20.6 /min (median per record).
 
 **Missing signals:** Discover 349 (pig) and 655 (rat) have ECG, heart rate and stimulation channels
 but no pressure or respiration, and Discover 406 has ECG only: every recording is listed as skipped

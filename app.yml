@@ -27,8 +27,9 @@ application:
     - nwb
 runtime:
   # One recording at a time; pressure, ECG and respiration are read a slice at a time and decimated to
-  # the species' working rate. Measured in Docker (amd64 emulation on an M-series Mac, --cpus 1
-  # --memory 2g): peak 510 MB and 9 s for the six 2 h Fantasia records (README "Runtime").
+  # the species' working rate, 10 min at a time. Measured in Docker (amd64 emulation on an M-series
+  # Mac, --cpus 1 --memory 2g): peak 357 MB / 8 s for the six 2 h Fantasia records, 586 MB / 45 s for
+  # a 6 h rat with ECG, pressure and respiration at 1 kHz (README "Runtime").
   cpu: 1024
   memory: 2048
   computeTypes:
