@@ -1,0 +1,8 @@
+data
+LICENSE
+pytest.ini
+sample-input
+tests
+validation
+.git
+.pytest_cache

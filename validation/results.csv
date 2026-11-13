@@ -1,0 +1,43 @@
+recording,check,value,note
+f2o01,bp_pulse_sensitivity_vs_reference_qrs,0.9947,7071/7109 N beats
+f2o01,bp_pulse_ppv_vs_reference_qrs,0.9916,7071/7131 pressure beats
+f2o01,median_pulse_arrival_s,0.38,R to systolic peak
+f2o02,bp_pulse_sensitivity_vs_reference_qrs,0.9932,6308/6351 N beats
+f2o02,bp_pulse_ppv_vs_reference_qrs,0.9967,6308/6329 pressure beats
+f2o02,median_pulse_arrival_s,0.348,R to systolic peak
+f2y01,bp_pulse_sensitivity_vs_reference_qrs,0.9952,8003/8042 N beats
+f2y01,bp_pulse_ppv_vs_reference_qrs,0.983,8003/8141 pressure beats
+f2y01,median_pulse_arrival_s,0.284,R to systolic peak
+f2y02,bp_pulse_sensitivity_vs_reference_qrs,0.9922,6459/6510 N beats
+f2y02,bp_pulse_ppv_vs_reference_qrs,0.9878,6459/6539 pressure beats
+f2y02,median_pulse_arrival_s,0.334,R to systolic peak
+sub-f1o01_rec-wfdb,rsa_p2t_ecg_hrv_vs_detected,24.932,with R-peaks detected in bp-resp: 23.9102
+sub-f1o01_rec-wfdb,rsa_porges-bohrer_ecg_hrv_vs_detected,4.50575,with R-peaks detected in bp-resp: 4.43457
+sub-f1y01_rec-wfdb,rsa_p2t_ecg_hrv_vs_detected,114.433,with R-peaks detected in bp-resp: 102.69
+sub-f1y01_rec-wfdb,rsa_porges-bohrer_ecg_hrv_vs_detected,7.69337,with R-peaks detected in bp-resp: 7.3827
+sub-f2o01_rec-wfdb,rsa_p2t_ecg_hrv_vs_detected,48.7426,with R-peaks detected in bp-resp: 47.7865
+sub-f2o01_rec-wfdb,rsa_porges-bohrer_ecg_hrv_vs_detected,6.15244,with R-peaks detected in bp-resp: 6.12001
+sub-f2o02_rec-wfdb,rsa_p2t_ecg_hrv_vs_detected,35.8381,with R-peaks detected in bp-resp: 35.5206
+sub-f2o02_rec-wfdb,rsa_porges-bohrer_ecg_hrv_vs_detected,5.0668,with R-peaks detected in bp-resp: 5.06779
+sub-f2y01_rec-wfdb,rsa_p2t_ecg_hrv_vs_detected,59.1706,with R-peaks detected in bp-resp: 60.7823
+sub-f2y01_rec-wfdb,rsa_porges-bohrer_ecg_hrv_vs_detected,6.1422,with R-peaks detected in bp-resp: 6.13364
+sub-f2y02_rec-wfdb,rsa_p2t_ecg_hrv_vs_detected,79.8915,with R-peaks detected in bp-resp: 77.0665
+sub-f2y02_rec-wfdb,rsa_porges-bohrer_ecg_hrv_vs_detected,7.48589,with R-peaks detected in bp-resp: 7.39694
+sub-0001_rec-wfdb,brs_sequence-up,46.64,n=7 valid=true coherence=; age group 20-24 y; Kardos 2001 regression at 22 y: 13.2 ms/mmHg
+sub-0001_rec-wfdb,brs_sequence-down,16.8417,n=6 valid=true coherence=; age group 20-24 y; Kardos 2001 regression at 22 y: 13.2 ms/mmHg
+sub-0001_rec-wfdb,brs_sequence-all,32.8869,n=13 valid=true coherence=; age group 20-24 y; Kardos 2001 regression at 22 y: 13.2 ms/mmHg
+sub-0001_rec-wfdb,brs_alpha-lf,24.248,n=13 valid=false coherence=0.429; age group 20-24 y; Kardos 2001 regression at 22 y: 13.2 ms/mmHg
+sub-0001_rec-wfdb,brs_alpha-hf,35.3739,n=13 valid=false coherence=0.127; age group 20-24 y; Kardos 2001 regression at 22 y: 13.2 ms/mmHg
+sub-0001_rec-wfdb,brs_transfer-lf,27.0746,n=6 valid=true coherence=0.6; age group 20-24 y; Kardos 2001 regression at 22 y: 13.2 ms/mmHg
+sub-0002_rec-wfdb,brs_sequence-up,34.9681,n=48 valid=true coherence=; age group 20-24 y; Kardos 2001 regression at 22 y: 13.2 ms/mmHg
+sub-0002_rec-wfdb,brs_sequence-down,34.4241,n=10 valid=true coherence=; age group 20-24 y; Kardos 2001 regression at 22 y: 13.2 ms/mmHg
+sub-0002_rec-wfdb,brs_sequence-all,34.8743,n=58 valid=true coherence=; age group 20-24 y; Kardos 2001 regression at 22 y: 13.2 ms/mmHg
+sub-0002_rec-wfdb,brs_alpha-lf,24.7209,n=22 valid=true coherence=0.557; age group 20-24 y; Kardos 2001 regression at 22 y: 13.2 ms/mmHg
+sub-0002_rec-wfdb,brs_alpha-hf,56.9486,n=22 valid=true coherence=0.502; age group 20-24 y; Kardos 2001 regression at 22 y: 13.2 ms/mmHg
+sub-0002_rec-wfdb,brs_transfer-lf,34.5152,n=7 valid=true coherence=0.768; age group 20-24 y; Kardos 2001 regression at 22 y: 13.2 ms/mmHg
+sub-0003_rec-wfdb,brs_sequence-up,,n=0 valid=false coherence=; age group 45-49 y; Kardos 2001 regression at 47 y: 6.2 ms/mmHg
+sub-0003_rec-wfdb,brs_sequence-down,5.37387,n=2 valid=false coherence=; age group 45-49 y; Kardos 2001 regression at 47 y: 6.2 ms/mmHg
+sub-0003_rec-wfdb,brs_sequence-all,5.37387,n=2 valid=false coherence=; age group 45-49 y; Kardos 2001 regression at 47 y: 6.2 ms/mmHg
+sub-0003_rec-wfdb,brs_alpha-lf,5.1299,n=28 valid=false coherence=0.449; age group 45-49 y; Kardos 2001 regression at 47 y: 6.2 ms/mmHg
+sub-0003_rec-wfdb,brs_alpha-hf,9.66258,n=28 valid=true coherence=0.553; age group 45-49 y; Kardos 2001 regression at 47 y: 6.2 ms/mmHg
+sub-0003_rec-wfdb,brs_transfer-lf,4.11516,n=7 valid=true coherence=0.665; age group 45-49 y; Kardos 2001 regression at 47 y: 6.2 ms/mmHg

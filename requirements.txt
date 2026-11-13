@@ -1,0 +1,35 @@
+# Runtime dependencies, resolved for python:3.12.16-slim-bookworm (linux/amd64) and installed with
+# --no-deps --only-binary=:all: (every package is listed here, wheels only).
+# NeuroKit2 (MIT): respiration (rsp_clean / rsp_peaks, khodadad2018), RSA (hrv_rsa) and the fallback
+# R-peak detector (ecg_findpeaks, neurokit).
+neurokit2==0.3.0
+numpy==2.5.4
+scipy==1.18.1
+pandas==3.1.1
+matplotlib==3.11.2
+# h5py reads the NWB files (NWB 2.x is HDF5) by slice; pynwb is not needed at run time.
+h5py==3.16.0
+# NeuroKit2's declared dependencies (imported by `import neurokit2`)
+scikit-learn==1.9.1
+joblib==1.6.0
+threadpoolctl==3.8.0
+cloudpickle==3.1.2
+narwhals==2.28.0
+PyWavelets==1.10.0
+requests==2.34.2
+certifi==2026.10.23
+charset-normalizer==3.5.2
+idna==3.20
+urllib3==2.8.0
+setuptools==81.0.0
+# pandas and matplotlib dependencies
+python-dateutil==4.0.0
+six==1.17.0
+tzdata==2026.6
+contourpy==1.4.0
+cycler==0.12.1
+fonttools==4.68.0
+kiwisolver==1.5.1
+packaging==26.3
+pillow==13.0.0
+pyparsing==3.3.3
